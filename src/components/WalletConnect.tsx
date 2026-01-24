@@ -21,18 +21,28 @@ const WalletConnect: React.FC = () => {
 
   useEffect(() => {
     // Initialize Ronin Wallet Connector
-    const connector = new RoninWalletConnector();
-    setRoninConnector(connector);
+    try {
+      const connector = new RoninWalletConnector();
+      setRoninConnector(connector);
 
-    return () => {
-      if (connector) {
-        connector.disconnect();
-      }
-    };
+      return () => {
+        // Cleanup - disconnect if connected
+        connector.disconnect().catch((err) => {
+          // Silently handle disconnect errors (e.g., provider not found)
+          console.debug('Disconnect cleanup error (expected if wallet not installed):', err);
+        });
+      };
+    } catch (err) {
+      console.error('Error initializing Ronin Wallet Connector:', err);
+      return undefined;
+    }
   }, []);
 
   const handleRoninConnect = async () => {
-    if (!roninConnector) return;
+    if (!roninConnector) {
+      setError('Ronin Wallet Connector not initialized');
+      return;
+    }
     
     setLoading('ronin');
     setError('');
@@ -49,7 +59,11 @@ const WalletConnect: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error connecting Ronin wallet:', err);
-      setError(`Ronin connection failed: ${err.message || 'Unknown error'}`);
+      if (err.message && err.message.includes('ProviderNotFound')) {
+        setError('Ronin Wallet extension not found. Please install it from the Chrome Web Store.');
+      } else {
+        setError(`Ronin connection failed: ${err.message || 'Unknown error'}`);
+      }
     } finally {
       setLoading('');
     }
@@ -75,7 +89,11 @@ const WalletConnect: React.FC = () => {
       setMetamaskWallet(wallet);
     } catch (err: any) {
       console.error('Error connecting Metamask:', err);
-      setError(`Metamask connection failed: ${err.message || 'Unknown error'}`);
+      if (err.message && err.message.includes('not installed')) {
+        setError('Metamask extension not found. Please install it from metamask.io');
+      } else {
+        setError(`Metamask connection failed: ${err.message || 'Unknown error'}`);
+      }
     } finally {
       setLoading('');
     }
