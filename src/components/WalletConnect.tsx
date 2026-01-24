@@ -41,7 +41,8 @@ const WalletConnect: React.FC = () => {
 
   const sendToLoginPhp = async (address: string, walletType: 'ronin' | 'metamask') => {
     try {
-      const response = await fetch('/login.php', {
+      const loginEndpoint = process.env.REACT_APP_LOGIN_ENDPOINT || '/login.php';
+      const response = await fetch(loginEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

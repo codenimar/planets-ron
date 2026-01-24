@@ -7,8 +7,9 @@
  */
 
 // Set headers for CORS and JSON response
+// NOTE: In production, replace '*' with your specific domain (e.g., 'https://yourdomain.com')
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: *'); // TODO: Change to specific domain in production
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -40,8 +41,13 @@ $address = $data['address'];
 $walletType = $data['walletType'];
 $timestamp = $data['timestamp'] ?? date('c');
 
-// Validate address format (basic validation)
-if (!preg_match('/^0x[a-fA-F0-9]{40}$/', $address)) {
+// Validate address format (supports both Ethereum and Ronin formats)
+// Ethereum: 0x followed by 40 hex characters
+// Ronin: ronin: followed by 40 hex characters, or 0x format
+$isValidEthereumFormat = preg_match('/^0x[a-fA-F0-9]{40}$/', $address);
+$isValidRoninFormat = preg_match('/^ronin:[a-fA-F0-9]{40}$/', $address);
+
+if (!$isValidEthereumFormat && !$isValidRoninFormat) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid wallet address format']);
     exit();
@@ -69,9 +75,11 @@ $logEntry = [
     'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
 ];
 
-// Optionally save to a log file
-$logFile = 'wallet_logins.log';
-file_put_contents(
+// Optionally save to a log file (stored outside web root for security)
+// NOTE: Ensure the path is outside the public directory in production
+// Example: '/var/log/app/wallet_logins.log' or '../logs/wallet_logins.log'
+$logFile = '../wallet_logins.log';
+@file_put_contents(
     $logFile, 
     json_encode($logEntry) . PHP_EOL, 
     FILE_APPEND | LOCK_EX
