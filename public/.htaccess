@@ -1,5 +1,29 @@
+# Security Headers
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # XSS Protection
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Prevent MIME type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Referrer Policy
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Content Security Policy (adjust as needed for your application)
+    # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+</IfModule>
+
 # Deny access to log files
 <Files "wallet_logins.log">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deny access to session management utility
+<Files "session.php">
     Order allow,deny
     Deny from all
 </Files>
@@ -14,3 +38,13 @@
     Order allow,deny
     Deny from all
 </Files>
+
+# Prevent directory listing
+Options -Indexes
+
+# Enable PHP session settings
+<IfModule mod_php.c>
+    php_flag session.cookie_httponly On
+    php_flag session.use_strict_mode On
+    php_flag session.use_only_cookies On
+</IfModule>
