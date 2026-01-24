@@ -6,12 +6,21 @@
  * It receives the wallet address and type from the React frontend.
  */
 
+// Secure session configuration
+ini_set('session.cookie_httponly', 1);      // Prevent JavaScript access to session cookie
+ini_set('session.cookie_secure', 0);        // Set to 1 if using HTTPS only
+ini_set('session.cookie_samesite', 'Lax');  // CSRF protection
+ini_set('session.use_strict_mode', 1);      // Reject uninitialized session IDs
+ini_set('session.use_only_cookies', 1);     // Use only cookies for session IDs
+ini_set('session.cookie_lifetime', 3600);   // Session cookie expires in 1 hour
+
 // Set headers for CORS and JSON response
 // NOTE: In production, replace '*' with your specific domain (e.g., 'https://yourdomain.com')
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *'); // TODO: Change to specific domain in production
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true'); // Allow credentials for session cookies
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -60,6 +69,12 @@ if (!in_array($walletType, ['ronin', 'metamask'])) {
     exit();
 }
 
+// Start session with secure configuration
+session_start();
+
+// Regenerate session ID to prevent session fixation attacks
+session_regenerate_id(true);
+
 // Here you would typically:
 // 1. Store the login in a database
 // 2. Create a session
@@ -72,7 +87,8 @@ $logEntry = [
     'walletType' => $walletType,
     'timestamp' => $timestamp,
     'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-    'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
+    'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+    'sessionId' => session_id()
 ];
 
 // Optionally save to a log file (stored outside web root for security)
@@ -85,15 +101,22 @@ $logFile = '../wallet_logins.log';
     FILE_APPEND | LOCK_EX
 );
 
-// Start session and store wallet info
-session_start();
+// Store wallet info in session
 $_SESSION['wallet_address'] = $address;
 $_SESSION['wallet_type'] = $walletType;
 $_SESSION['login_time'] = time();
+$_SESSION['last_activity'] = time();
+$_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+$_SESSION['authenticated'] = true;
 
-// Generate a simple session token (in production, use a more secure method)
+// Generate a secure session token using cryptographically strong random bytes
 $sessionToken = bin2hex(random_bytes(32));
 $_SESSION['session_token'] = $sessionToken;
+
+// Generate CSRF token for additional security
+$csrfToken = bin2hex(random_bytes(32));
+$_SESSION['csrf_token'] = $csrfToken;
 
 // Return success response
 http_response_code(200);
@@ -104,6 +127,7 @@ echo json_encode([
         'address' => $address,
         'walletType' => $walletType,
         'sessionToken' => $sessionToken,
+        'csrfToken' => $csrfToken,
         'timestamp' => $timestamp
     ]
 ]);
