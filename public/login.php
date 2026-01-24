@@ -15,12 +15,23 @@ ini_set('session.use_only_cookies', 1);     // Use only cookies for session IDs
 ini_set('session.cookie_lifetime', 3600);   // Session cookie expires in 1 hour
 
 // Set headers for CORS and JSON response
-// NOTE: In production, replace '*' with your specific domain (e.g., 'https://yourdomain.com')
+// NOTE: In production, replace with your specific domain (e.g., 'https://yourdomain.com')
+// For local development with React on localhost:3000
+$allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8888',
+    'http://127.0.0.1:3000',
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true'); // Allow credentials for session cookies
+}
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // TODO: Change to specific domain in production
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
-header('Access-Control-Allow-Credentials: true'); // Allow credentials for session cookies
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

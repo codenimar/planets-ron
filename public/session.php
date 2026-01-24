@@ -137,6 +137,8 @@ function requireAuthentication($loginUrl = '/index.html') {
  * @param string $message Optional message to display
  */
 function redirectToLogin($loginUrl = '/index.html', $message = '') {
+    startSecureSession();
+    
     // Store message in session for display after redirect
     if ($message) {
         $_SESSION['login_message'] = $message;

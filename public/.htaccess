@@ -43,7 +43,7 @@
 Options -Indexes
 
 # Enable PHP session settings
-<IfModule mod_php7.c>
+<IfModule mod_php.c>
     php_flag session.cookie_httponly On
     php_flag session.use_strict_mode On
     php_flag session.use_only_cookies On

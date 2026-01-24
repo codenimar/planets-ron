@@ -8,11 +8,23 @@
 require_once 'session.php';
 
 // Set headers for CORS
+// NOTE: In production, replace with your specific domain (e.g., 'https://yourdomain.com')
+// For local development with React on localhost:3000
+$allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8888',
+    'http://127.0.0.1:3000',
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true');
+}
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // TODO: Change to specific domain in production
 header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Headers: Content-Type');
-header('Access-Control-Allow-Credentials: true');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
