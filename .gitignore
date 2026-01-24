@@ -25,3 +25,7 @@ yarn-error.log*
 # PHP session logs
 wallet_logins.log
 *.log
+
+# Development server files
+.php-server.pid
+php-server.log

@@ -62,6 +62,28 @@ cp .env.example .env
 # Edit .env if needed (default values work for local development)
 ```
 
+### Quick Start (Recommended)
+
+Use the provided script to start both servers automatically:
+
+```bash
+./dev-start.sh
+```
+
+This will:
+- Start the PHP backend server on http://localhost:8888
+- Start the React development server on http://localhost:3000
+- Open the app in your browser
+
+To stop both servers, press `Ctrl+C` or run:
+```bash
+./dev-stop.sh
+```
+
+### Manual Start
+
+If you prefer to start servers manually:
+
 4. Start the PHP backend server:
 ```bash
 cd api
