@@ -11,6 +11,8 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
+  display: flex;
+  flex-direction: column;
 }
 
 .App-header {
@@ -33,21 +35,16 @@
 }
 
 .App-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2rem 1rem;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.game-section {
-  margin-bottom: 3rem;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2rem;
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .wallet-section {
+  width: 100%;
+  max-width: 600px;
   background: rgba(255, 255, 255, 0.1);
   padding: 2rem;
   border-radius: 20px;
@@ -61,6 +58,12 @@
   font-size: 2rem;
 }
 
+.wallet-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .error-message {
   background-color: rgba(231, 76, 60, 0.8);
   color: white;
@@ -71,10 +74,14 @@
   font-weight: 500;
 }
 
-.wallet-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.success-message {
+  background-color: rgba(46, 204, 113, 0.8);
+  color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 500;
 }
 
 .wallet-card {
@@ -83,6 +90,11 @@
   border-radius: 15px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 1.5rem;
+}
+
+.wallet-card:last-child {
+  margin-bottom: 0;
 }
 
 .wallet-card:hover {
@@ -111,6 +123,7 @@
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  width: 100%;
 }
 
 .connect-button:hover:not(:disabled) {
@@ -194,7 +207,7 @@
   padding: 2rem 1rem;
   text-align: center;
   background: rgba(0, 0, 0, 0.2);
-  margin-top: 3rem;
+  margin-top: auto;
 }
 
 .App-footer p {
@@ -203,14 +216,6 @@
 }
 
 /* Responsive Design */
-@media (min-width: 768px) {
-  .wallet-section .wallet-card {
-    display: inline-block;
-    width: calc(50% - 1rem);
-    margin: 0 0.5rem;
-  }
-}
-
 @media (max-width: 767px) {
   .App-header h1 {
     font-size: 2rem;
@@ -224,7 +229,6 @@
     font-size: 1.5rem;
   }
 
-  .game-section,
   .wallet-section {
     padding: 1rem;
   }

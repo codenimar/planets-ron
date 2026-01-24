@@ -13,7 +13,6 @@
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
     "ethers": "^5.7.2",
-    "phaser": "^3.90.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-scripts": "5.0.1",

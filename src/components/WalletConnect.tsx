@@ -18,6 +18,7 @@ const WalletConnect: React.FC = () => {
   const [roninConnector, setRoninConnector] = useState<RoninWalletConnector | null>(null);
   const [loading, setLoading] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
 
   useEffect(() => {
     // Initialize Ronin Wallet Connector
@@ -38,6 +39,34 @@ const WalletConnect: React.FC = () => {
     }
   }, []);
 
+  const sendToLoginPhp = async (address: string, walletType: 'ronin' | 'metamask') => {
+    try {
+      const response = await fetch('/login.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: address,
+          walletType: walletType,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(`Login successful! Address sent to server.`);
+        return data;
+      } else {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+    } catch (err: any) {
+      console.error('Error sending to login.php:', err);
+      setError(`Failed to send address to server: ${err.message}`);
+      throw err;
+    }
+  };
+
   const handleRoninConnect = async () => {
     if (!roninConnector) {
       setError('Ronin Wallet Connector not initialized');
@@ -46,6 +75,7 @@ const WalletConnect: React.FC = () => {
     
     setLoading('ronin');
     setError('');
+    setSuccess('');
     
     try {
       const result = await roninConnector.connect(2020); // Ronin mainnet chain ID
@@ -54,8 +84,11 @@ const WalletConnect: React.FC = () => {
         setRoninWallet({
           address: result.account,
           isConnected: true,
-          balance: 'N/A', // Ronin Wallet Connector doesn't provide balance directly
+          balance: 'N/A',
         });
+        
+        // Send address to login.php
+        await sendToLoginPhp(result.account, 'ronin');
       }
     } catch (err: any) {
       console.error('Error connecting Ronin wallet:', err);
@@ -75,6 +108,7 @@ const WalletConnect: React.FC = () => {
     try {
       await roninConnector.disconnect();
       setRoninWallet(disconnectWallet());
+      setSuccess('');
     } catch (err: any) {
       console.error('Error disconnecting Ronin wallet:', err);
     }
@@ -83,10 +117,16 @@ const WalletConnect: React.FC = () => {
   const handleMetamaskConnect = async () => {
     setLoading('metamask');
     setError('');
+    setSuccess('');
     
     try {
       const wallet = await connectMetamask();
       setMetamaskWallet(wallet);
+      
+      // Send address to login.php
+      if (wallet.address) {
+        await sendToLoginPhp(wallet.address, 'metamask');
+      }
     } catch (err: any) {
       console.error('Error connecting Metamask:', err);
       if (err.message && err.message.includes('not installed')) {
@@ -101,6 +141,7 @@ const WalletConnect: React.FC = () => {
 
   const handleMetamaskDisconnect = () => {
     setMetamaskWallet(disconnectWallet());
+    setSuccess('');
   };
 
   const formatAddress = (address: string | null) => {
@@ -118,7 +159,13 @@ const WalletConnect: React.FC = () => {
         </div>
       )}
 
-      <div className="wallet-section">
+      {success && (
+        <div className="success-message">
+          {success}
+        </div>
+      )}
+
+      <div className="wallet-cards">
         <div className="wallet-card">
           <h3>Ronin Wallet</h3>
           <div className="wallet-icon">🎮</div>
@@ -186,7 +233,7 @@ const WalletConnect: React.FC = () => {
       <div className="connection-status">
         {(roninWallet.isConnected || metamaskWallet.isConnected) && (
           <p className="status-text">
-            ✓ Wallet connected successfully!
+            ✓ Wallet connected and authenticated!
           </p>
         )}
       </div>
