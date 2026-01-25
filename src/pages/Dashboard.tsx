@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
             <div className="stat-icon">💎</div>
             <div className="stat-content">
               <div className="stat-value">{member?.points || 0}</div>
-              <div className="stat-label">Total Pointa</div>
+              <div className="stat-label">Total Points</div>
             </div>
           </div>
           {stats && (

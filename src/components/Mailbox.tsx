@@ -123,6 +123,7 @@ const Mailbox: React.FC = () => {
               <span>Date: {new Date(selectedMessage.created_at).toLocaleString()}</span>
             </div>
             <div className="message-body" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#e5e7eb' }}>
+              {/* Content is displayed as plain text to prevent XSS */}
               {selectedMessage.content}
             </div>
             <div style={{ marginTop: '1.5rem' }}>

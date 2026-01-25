@@ -56,7 +56,7 @@ const RecentDistributions: React.FC = () => {
   };
 
   const shortenAddress = (address: string) => {
-    if (!address) return 'Unknown';
+    if (!address || address.length < 10) return 'Unknown';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
