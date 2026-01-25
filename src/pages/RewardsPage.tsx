@@ -1,34 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { apiCall, API_ENDPOINTS } from '../utils/api';
+import { RewardAPI } from '../utils/api';
+import { Reward, RewardClaim } from '../utils/localStorage';
 
-interface Reward {
-  id: number;
-  name: string;
-  description: string;
-  points_cost: number;
-  reward_type: string;
-  image_url?: string;
-  quantity_available: number;
-  quantity_total: number;
-}
-
-interface Claim {
-  id: number;
-  reward_id: number;
-  reward_name: string;
-  points_spent: number;
-  status: string;
-  claimed_at: string;
-  fulfilled_at?: string;
+interface ClaimWithReward extends RewardClaim {
+  reward: Reward | null;
 }
 
 const RewardsPage: React.FC = () => {
   const { member, refreshMember } = useAuth();
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [claims, setClaims] = useState<Claim[]>([]);
+  const [claims, setClaims] = useState<ClaimWithReward[]>([]);
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState<number | null>(null);
+  const [claiming, setClaiming] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState<'available' | 'history'>('available');
@@ -41,8 +25,8 @@ const RewardsPage: React.FC = () => {
     try {
       setLoading(true);
       const results = await Promise.allSettled([
-        apiCall(API_ENDPOINTS.REWARDS_LIST),
-        apiCall(API_ENDPOINTS.MY_CLAIMS),
+        RewardAPI.list(),
+        RewardAPI.myClaims(),
       ]);
 
       if (results[0].status === 'fulfilled' && results[0].value.success) {
@@ -63,7 +47,7 @@ const RewardsPage: React.FC = () => {
     }
   };
 
-  const handleClaimReward = async (rewardId: number, pointsCost: number) => {
+  const handleClaimReward = async (rewardId: string, pointsCost: number) => {
     if (!member) return;
 
     if (member.points < pointsCost) {
@@ -77,18 +61,13 @@ const RewardsPage: React.FC = () => {
       setSuccess('');
 
       try {
-        const response = await apiCall(API_ENDPOINTS.REWARD_CLAIM, {
-          method: 'POST',
-          body: JSON.stringify({ reward_id: rewardId }),
-        });
+        const response = await RewardAPI.claim(rewardId);
 
         if (response.success) {
           setSuccess('Reward claimed successfully! Status: Pending fulfillment.');
           await refreshMember();
           await loadRewards();
           setActiveTab('history');
-        } else {
-          setError(response.error || 'Failed to claim reward');
         }
       } catch (err: any) {
         setError(err.message || 'Failed to claim reward');
@@ -111,7 +90,7 @@ const RewardsPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { color: string; text: string }> = {
       pending: { color: '#f39c12', text: '⏳ Pending' },
-      fulfilled: { color: '#27ae60', text: '✅ Fulfilled' },
+      sent: { color: '#27ae60', text: '✅ Sent' },
       cancelled: { color: '#e74c3c', text: '❌ Cancelled' },
     };
     const badge = badges[status] || badges.pending;
@@ -181,7 +160,7 @@ const RewardsPage: React.FC = () => {
                       💎 {reward.points_cost} points
                     </div>
                     <div className="reward-availability">
-                      📦 {reward.quantity_available} / {reward.quantity_total} available
+                      📦 {reward.quantity_available} available
                     </div>
                   </div>
 
@@ -220,14 +199,14 @@ const RewardsPage: React.FC = () => {
               {claims.map((claim) => (
                 <div key={claim.id} className="claim-card">
                   <div className="claim-header">
-                    <h3>{claim.reward_name}</h3>
+                    <h3>{claim.reward?.name || 'Unknown Reward'}</h3>
                     {getStatusBadge(claim.status)}
                   </div>
                   <div className="claim-details">
                     <p><strong>Points Spent:</strong> 💎 {claim.points_spent}</p>
                     <p><strong>Claimed:</strong> {new Date(claim.claimed_at).toLocaleString()}</p>
-                    {claim.fulfilled_at && (
-                      <p><strong>Fulfilled:</strong> {new Date(claim.fulfilled_at).toLocaleString()}</p>
+                    {claim.processed_at && (
+                      <p><strong>Processed:</strong> {new Date(claim.processed_at).toLocaleString()}</p>
                     )}
                   </div>
                   {claim.status === 'pending' && (

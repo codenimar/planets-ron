@@ -8,6 +8,7 @@ import PostsPage from './pages/PostsPage';
 import RewardsPage from './pages/RewardsPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import AdminPage from './pages/AdminPage';
 import './App.css';
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -59,6 +60,14 @@ function AppContent() {
             element={
               <PrivateRoute>
                 <RewardsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <AdminPage />
               </PrivateRoute>
             }
           />

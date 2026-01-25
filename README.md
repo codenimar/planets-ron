@@ -2,6 +2,8 @@
 
 A complete React-based advertising service platform with wallet authentication, points system, and publisher features. Built for the Ronin ecosystem with support for multiple wallet types.
 
+**✨ NEW: Fully runs in the browser - No backend server required! All data is stored locally.**
+
 ## 🌟 Features
 
 ### Core Platform Features
@@ -13,11 +15,14 @@ A complete React-based advertising service platform with wallet authentication, 
 - **NFT Collection Bonuses**: Additional points for holding specific NFT collections (up to 3 per collection)
 - **24-Hour Cooldown**: Each post can be viewed once per 24 hours per member
 - **Admin Moderation**: New posts require admin approval before going live
+- **Admin Configuration**: Configure NFT collections, rewards, and app settings through a web interface
+- **Data Management**: Export/import data as JSON for backup and migration
 
 ### Technical Features
 - **React 19 + TypeScript**: Modern React with full type safety
 - **React Router**: Client-side routing with protected routes
-- **PHP Backend API**: RESTful API with MySQL database
+- **Local Storage**: All data persists in the browser using localStorage
+- **No Backend Required**: Fully runs in the browser - no PHP, no MySQL, no server needed
 - **Session Management**: Secure authentication with session tokens
 - **Responsive Design**: Mobile-first design that works on all devices
 - **Modern UI**: Purple/blue gradient theme with glassmorphism effects
@@ -28,9 +33,6 @@ A complete React-based advertising service platform with wallet authentication, 
 
 - **Node.js** (v16 or higher)
 - **npm** or yarn
-- **PHP** (7.4 or higher)
-- **MySQL** (5.7 or higher)
-- **Web server** (Apache/Nginx with PHP support)
 - **Wallet Extension**: Ronin Wallet or Metamask browser extension
 
 ### Installation
@@ -41,63 +43,28 @@ git clone https://github.com/codenimar/planets-ron.git
 cd planets-ron
 ```
 
-2. **Install frontend dependencies:**
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. **Set up the database:**
+3. **Start development server:**
 ```bash
-# Create MySQL database
-mysql -u root -p -e "CREATE DATABASE roninads CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# Import schema
-mysql -u root -p roninads < database/schema.sql
-```
-
-4. **Configure environment:**
-```bash
-# Copy environment example
-cp .env.example .env
-
-# Edit .env with your database credentials
-# DB_HOST=localhost
-# DB_NAME=roninads
-# DB_USER=root
-# DB_PASS=your_password
-```
-
-5. **Start development server:**
-```bash
-# Frontend (React)
 npm start
-
-# Backend (PHP) - if using PHP built-in server for testing
-# php -S localhost:8000 -t public
 ```
 
-6. **Open the application:**
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend API: [http://localhost:8000/api](http://localhost:8000/api)
+4. **Open the application:**
+   - Application: [http://localhost:3000](http://localhost:3000)
+   - Login with your wallet
+   - First wallet to login will be automatically set as admin
 
 ## 📁 Project Structure
 
 ```
-roninads/
-├── database/
-│   └── schema.sql                 # MySQL database schema
+planets-ron/
 ├── public/
-│   ├── api/                       # PHP Backend API
-│   │   ├── config.php            # Database configuration
-│   │   ├── auth.php              # Authentication endpoints
-│   │   ├── members.php           # Member management
-│   │   ├── posts.php             # Posts/Ads management
-│   │   ├── rewards.php           # Rewards system
-│   │   ├── nfts.php              # NFT collection tracking
-│   │   ├── admin.php             # Admin functions
-│   │   ├── README.md             # API documentation
-│   │   └── QUICK_REFERENCE.md    # API quick reference
-│   └── index.html                # React app entry point
+│   ├── index.html                # React app entry point
+│   └── ...                       # Static assets
 ├── src/
 │   ├── components/               # React components
 │   │   ├── Navigation.tsx        # Main navigation
@@ -109,16 +76,17 @@ roninads/
 │   │   ├── Dashboard.tsx         # Main dashboard
 │   │   ├── PostsPage.tsx         # Publisher post management
 │   │   ├── RewardsPage.tsx       # Rewards marketplace
+│   │   ├── AdminPage.tsx         # Admin configuration panel
 │   │   ├── TermsPage.tsx         # Terms of Service
 │   │   └── PrivacyPage.tsx       # Privacy Policy
 │   ├── utils/
-│   │   ├── api.ts                # API helper functions
+│   │   ├── api.ts                # API layer (uses localStorage)
+│   │   ├── localStorage.ts       # Local storage service
 │   │   └── wallet.ts             # Wallet utilities
 │   ├── App.tsx                   # Main App component
 │   ├── App.css                   # Global styles
 │   └── index.tsx                 # React entry point
-├── .env.example                  # Environment variables template
-├── package.json                  # Frontend dependencies
+├── package.json                  # Dependencies
 └── README.md                     # This file
 ```
 
@@ -139,7 +107,7 @@ roninads/
 
 ### For Publishers
 
-1. **Get Publisher Pass**: Obtain a Publisher Pass NFT (Basic, Silver, or Gold)
+1. **Get Publisher Pass**: Have an admin assign you a Publisher Pass (Basic, Silver, or Gold)
 2. **Create Posts**: Create up to 3 active posts at a time
 3. **Post Duration**:
    - Basic Pass: Posts active for 3 days
@@ -150,42 +118,56 @@ roninads/
 
 ### For Admins
 
-1. **Approve Posts**: Review and approve/reject new posts and edits
-2. **Manage Rewards**: Process reward claims (mark as sent or cancelled)
-3. **Monitor Platform**: View stats and manage members
+1. **Access Admin Panel**: Navigate to `/admin` after logging in with an admin wallet
+2. **Configure Application**:
+   - Adjust base points per view
+   - Set view duration requirements
+   - Configure cooldown hours
+   - Set max posts per publisher
+3. **Manage NFT Collections**: Add/remove NFT collections that give bonus points
+4. **Manage Rewards**: Add NFT or token rewards that members can claim
+5. **Approve Posts**: Review and approve/reject new posts and edits
+6. **Process Claims**: Mark reward claims as sent or cancelled
+7. **Give Passes**: Assign Click Passes and Publisher Passes to members
+8. **Data Management**: Export/import all data or clear storage
 
 ## 🔧 Configuration
 
-### Database Configuration
+### Admin Setup
 
-Edit `public/api/config.php` or set environment variables:
+The first wallet to log in will automatically become an admin. Additional admins can be added through the Admin Panel:
 
-```php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'roninads');
-define('DB_USER', 'root');
-define('DB_PASS', 'your_password');
-```
+1. Log in with your wallet
+2. Navigate to Admin Panel (Admin link appears in navigation)
+3. Go to Configuration tab
+4. Add admin wallet addresses as needed
 
-### Frontend Configuration
+### Application Settings
 
-Edit `.env`:
+Configure these settings through the Admin Panel → Configuration tab:
 
-```env
-# API endpoint (default: /api)
-REACT_APP_API_URL=/api
-```
+- **Base Points Per View**: Points earned for viewing a post (default: 1)
+- **View Duration Required**: Minimum seconds to view for earning points (default: 10)
+- **Cooldown Hours**: Hours before viewing the same post again (default: 24)
+- **Max Posts Per Publisher**: Maximum active posts per publisher (default: 3)
 
-### CORS Configuration
+### NFT Collections
 
-Update allowed origins in `public/api/config.php`:
+Add NFT collections that give bonus points to holders:
 
-```php
-$allowedOrigins = [
-    'http://localhost:3000',
-    'https://yourdomain.com',
-];
-```
+1. Go to Admin Panel → Configuration tab
+2. Scroll to NFT Collections section
+3. Add collection name and contract address
+4. Members holding NFTs from these collections get +1 point per NFT (max 3)
+
+### Rewards
+
+Create rewards that members can claim with their points:
+
+1. Go to Admin Panel → Configuration tab
+2. Scroll to Rewards section
+3. Add reward details (name, description, type, cost, quantity)
+4. Members can claim these rewards from the Rewards page
 
 ## 🛠️ Available Scripts
 
@@ -198,47 +180,13 @@ npm test           # Run tests
 npm run eject      # Eject from Create React App (one-way operation)
 ```
 
-### Backend Testing
-
-```bash
-# Test API endpoints
-cd public/api
-chmod +x test-api.sh
-./test-api.sh
-```
-
-## 📚 API Documentation
-
-Full API documentation is available in `public/api/README.md`.
-
-### Quick API Reference
-
-**Authentication:**
-- `POST /api/auth.php?action=login` - Login with wallet
-- `POST /api/auth.php?action=logout` - Logout
-- `GET /api/auth.php?action=check_session` - Check authentication
-
-**Members:**
-- `GET /api/members.php?action=profile` - Get member profile
-- `GET /api/members.php?action=stats` - Get member statistics
-
-**Posts:**
-- `GET /api/posts.php?action=list` - List all active posts
-- `POST /api/posts.php?action=create` - Create new post
-- `POST /api/posts.php?action=view` - Record post view and earn points
-
-**Rewards:**
-- `GET /api/rewards.php?action=list` - List available rewards
-- `POST /api/rewards.php?action=claim` - Claim a reward
-- `GET /api/rewards.php?action=my_claims` - Get claim history
-
 ## 🔒 Security Features
 
-- **SQL Injection Protection**: All queries use prepared statements
+- **Wallet Authentication**: Users authenticate with their Web3 wallets
 - **Session Management**: Secure session tokens with expiration
-- **CSRF Protection**: CSRF tokens for all mutations
+- **Local Storage**: All data stored locally in the browser
 - **Input Validation**: Comprehensive validation on all inputs
-- **Authentication Required**: Protected endpoints require valid session
+- **Authentication Required**: Protected routes require valid session
 - **Admin Authorization**: Admin functions require admin role
 - **Rate Limiting**: Cooldown periods prevent abuse
 
@@ -278,59 +226,70 @@ Optimized for:
 # Build React app
 npm run build
 
-# Deploy build folder to web server
-# Ensure PHP and MySQL are configured
-# Point web server to public/ directory
+# Deploy build folder to any static hosting service:
+# - Netlify
+# - Vercel
+# - GitHub Pages
+# - AWS S3 + CloudFront
+# - Any web server (Apache, Nginx, etc.)
 ```
 
-### Apache Configuration
+### Static Hosting Configuration
 
-```apache
-<VirtualHost *:80>
-    ServerName roninads.com
-    DocumentRoot /var/www/roninads/public
-    
-    <Directory /var/www/roninads/public>
-        Options -Indexes +FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-    
-    # React Router support
-    <IfModule mod_rewrite.c>
-        RewriteEngine On
-        RewriteBase /
-        RewriteRule ^index\.html$ - [L]
-        RewriteCond %{REQUEST_FILENAME} !-f
-        RewriteCond %{REQUEST_FILENAME} !-d
-        RewriteRule . /index.html [L]
-    </IfModule>
-</VirtualHost>
+For React Router to work properly, configure your hosting to redirect all routes to `index.html`:
+
+**Netlify**: Create `public/_redirects` file:
+```
+/*    /index.html   200
 ```
 
-### Nginx Configuration
-
-```nginx
-server {
-    listen 80;
-    server_name roninads.com;
-    root /var/www/roninads/public;
-    index index.html;
-    
-    # React Router support
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-    
-    # PHP API
-    location /api {
-        try_files $uri $uri/ =404;
-        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
+**Vercel**: Create `vercel.json` file:
+```json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
 ```
+
+**Apache**: Create/update `.htaccess` file:
+```apache
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+```
+
+**Nginx**:
+```nginx
+location / {
+  try_files $uri $uri/ /index.html;
+}
+```
+
+## 💾 Data Management
+
+### Export Data
+
+Use the Admin Panel → Data Management tab to export all data as a JSON file. This includes:
+- Members
+- Posts
+- Post views
+- Reward claims
+- Click passes
+- Publisher passes
+- Points history
+- Configuration
+
+### Import Data
+
+Import previously exported data through the Admin Panel. This will overwrite existing data.
+
+### Clear All Data
+
+⚠️ **Warning**: This permanently deletes all data. Use the Admin Panel → Data Management tab with caution.
 
 ## 🤝 Contributing
 
@@ -347,11 +306,10 @@ This project is open source and available under the MIT License.
 - Check that you're on the correct network
 - Try refreshing the page and reconnecting
 
-### API Errors
-- Verify database credentials in `.env` or `config.php`
-- Check that MySQL database is created and schema is imported
-- Ensure PHP has PDO MySQL extension enabled
-- Check CORS settings in `config.php`
+### Data Not Persisting
+- Check if cookies/local storage are enabled in your browser
+- Some privacy extensions may block local storage
+- Try a different browser or disable privacy extensions for this site
 
 ### Build Errors
 - Delete `node_modules` and `package-lock.json`
@@ -359,11 +317,15 @@ This project is open source and available under the MIT License.
 - Ensure Node.js version is 16 or higher
 - Clear React cache: `rm -rf node_modules/.cache`
 
+### "Ronin connection failed" Error
+- **This error should no longer occur** as the application no longer requires a backend server
+- All data is now stored locally in your browser
+- No PHP or MySQL setup is needed
+
 ## 📞 Support
 
 - **Contact**: [https://x.com/planetronin](https://x.com/planetronin)
 - **Issues**: Open an issue on GitHub
-- **Documentation**: Check `public/api/README.md` for API docs
 
 ## 🎉 Acknowledgments
 
@@ -373,7 +335,7 @@ Built with:
 - @sky-mavis/tanto-connect
 - ethers.js
 - React Router
-- PHP & MySQL
+- Browser LocalStorage API
 
 ---
 

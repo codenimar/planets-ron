@@ -1,39 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { apiCall, API_ENDPOINTS } from '../utils/api';
-
-interface MyPost {
-  id: number;
-  title: string;
-  description: string;
-  image_url?: string;
-  link_url?: string;
-  status: string;
-  created_at: string;
-  expires_at: string;
-  views_count: number;
-}
+import { PostAPI, MemberAPI, ConfigService } from '../utils/api';
+import { Post, ClickPass, PublisherPass } from '../utils/localStorage';
 
 interface PassInfo {
-  has_publisher_pass: boolean;
-  pass_type?: string;
-  max_active_posts: number;
-  post_duration_days: number;
+  click_pass: ClickPass | null;
+  publisher_pass: PublisherPass | null;
 }
 
 const PostsPage: React.FC = () => {
-  const [posts, setPosts] = useState<MyPost[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [passInfo, setPassInfo] = useState<PassInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<number | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
-    image_url: '',
-    link_url: '',
+    content: '',
+    postType: 'post' as 'ad' | 'post' | 'announcement',
   });
 
   useEffect(() => {
@@ -44,8 +30,8 @@ const PostsPage: React.FC = () => {
     try {
       setLoading(true);
       const [postsRes, passesRes] = await Promise.all([
-        apiCall(API_ENDPOINTS.MY_POSTS),
-        apiCall(API_ENDPOINTS.MEMBER_PASSES),
+        PostAPI.myPosts(),
+        MemberAPI.getPasses(),
       ]);
 
       if (postsRes.success) {
@@ -53,7 +39,10 @@ const PostsPage: React.FC = () => {
       }
 
       if (passesRes.success) {
-        setPassInfo(passesRes.pass_info);
+        setPassInfo({
+          click_pass: passesRes.click_pass,
+          publisher_pass: passesRes.publisher_pass,
+        });
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load posts');
@@ -62,7 +51,7 @@ const PostsPage: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -74,30 +63,27 @@ const PostsPage: React.FC = () => {
     setError('');
     setSuccess('');
 
-    if (!formData.title || !formData.description) {
-      setError('Title and description are required');
+    if (!formData.title || !formData.content) {
+      setError('Title and content are required');
       return;
     }
 
-    const activePosts = posts.filter((p) => p.status === 'active').length;
-    if (activePosts >= (passInfo?.max_active_posts || 3)) {
-      setError(`You can only have ${passInfo?.max_active_posts || 3} active posts at a time`);
+    const activePosts = posts.filter((p) => p.status === 'active' || p.status === 'pending').length;
+    const config = ConfigService.get();
+    const maxPosts = config.app_settings.max_posts_per_publisher;
+    if (activePosts >= maxPosts) {
+      setError(`You can only have ${maxPosts} active posts at a time`);
       return;
     }
 
     try {
-      const response = await apiCall(API_ENDPOINTS.POST_CREATE, {
-        method: 'POST',
-        body: JSON.stringify(formData),
-      });
+      const response = await PostAPI.create(formData.title, formData.content, formData.postType);
 
       if (response.success) {
         setSuccess('Post created successfully! It will be reviewed shortly.');
-        setFormData({ title: '', description: '', image_url: '', link_url: '' });
+        setFormData({ title: '', content: '', postType: 'post' });
         setCreating(false);
         await loadPosts();
-      } else {
-        setError(response.error || 'Failed to create post');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to create post');
@@ -112,34 +98,28 @@ const PostsPage: React.FC = () => {
     if (!editing) return;
 
     try {
-      const response = await apiCall(API_ENDPOINTS.POST_UPDATE, {
-        method: 'POST',
-        body: JSON.stringify({
-          post_id: editing,
-          ...formData,
-        }),
+      const response = await PostAPI.update(editing, {
+        title: formData.title,
+        content: formData.content,
       });
 
       if (response.success) {
         setSuccess('Post updated successfully!');
-        setFormData({ title: '', description: '', image_url: '', link_url: '' });
+        setFormData({ title: '', content: '', postType: 'post' });
         setEditing(null);
         await loadPosts();
-      } else {
-        setError(response.error || 'Failed to update post');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to update post');
     }
   };
 
-  const handleEdit = (post: MyPost) => {
+  const handleEdit = (post: Post) => {
     setEditing(post.id);
     setFormData({
       title: post.title,
-      description: post.description,
-      image_url: post.image_url || '',
-      link_url: post.link_url || '',
+      content: post.content,
+      postType: post.post_type,
     });
     setCreating(false);
   };
@@ -147,7 +127,7 @@ const PostsPage: React.FC = () => {
   const cancelEdit = () => {
     setEditing(null);
     setCreating(false);
-    setFormData({ title: '', description: '', image_url: '', link_url: '' });
+    setFormData({ title: '', content: '', postType: 'post' });
   };
 
   const getStatusBadge = (status: string) => {
@@ -169,7 +149,7 @@ const PostsPage: React.FC = () => {
     );
   }
 
-  if (!passInfo?.has_publisher_pass) {
+  if (!passInfo?.publisher_pass) {
     return (
       <div className="posts-page">
         <div className="no-access">
@@ -187,9 +167,8 @@ const PostsPage: React.FC = () => {
         <h1>📝 My Posts</h1>
         <div className="pass-info">
           <p>
-            <strong>Pass Type:</strong> {passInfo.pass_type || 'Basic'} |{' '}
-            <strong>Max Active Posts:</strong> {passInfo.max_active_posts} |{' '}
-            <strong>Post Duration:</strong> {passInfo.post_duration_days} days
+            <strong>Pass Type:</strong> {passInfo.publisher_pass?.pass_type || 'Basic'} |{' '}
+            <strong>Post Duration:</strong> {passInfo.publisher_pass?.duration_days || 3} days
           </p>
         </div>
         {!creating && !editing && (
@@ -220,11 +199,11 @@ const PostsPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="description">Description *</label>
+              <label htmlFor="content">Content *</label>
               <textarea
-                id="description"
-                name="description"
-                value={formData.description}
+                id="content"
+                name="content"
+                value={formData.content}
                 onChange={handleInputChange}
                 maxLength={500}
                 rows={4}
@@ -233,27 +212,18 @@ const PostsPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="image_url">Image URL (optional)</label>
-              <input
-                type="url"
-                id="image_url"
-                name="image_url"
-                value={formData.image_url}
+              <label htmlFor="postType">Post Type *</label>
+              <select
+                id="postType"
+                name="postType"
+                value={formData.postType}
                 onChange={handleInputChange}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="link_url">Link URL (optional)</label>
-              <input
-                type="url"
-                id="link_url"
-                name="link_url"
-                value={formData.link_url}
-                onChange={handleInputChange}
-                placeholder="https://example.com"
-              />
+                required
+              >
+                <option value="post">Post</option>
+                <option value="ad">Ad</option>
+                <option value="announcement">Announcement</option>
+              </select>
             </div>
 
             <div className="form-actions">
@@ -278,34 +248,18 @@ const PostsPage: React.FC = () => {
           <div className="posts-grid">
             {posts.map((post) => (
               <div key={post.id} className="post-card">
-                {post.image_url && (
-                  <div className="post-image">
-                    <img src={post.image_url} alt={post.title} />
-                  </div>
-                )}
                 <div className="post-content">
                   <div className="post-header">
                     <h3>{post.title}</h3>
                     {getStatusBadge(post.status)}
                   </div>
-                  <p>{post.description}</p>
+                  <p>{post.content}</p>
+                  <div className="post-type-badge">{post.post_type}</div>
                   
                   <div className="post-meta">
-                    <span>👁️ {post.views_count} views</span>
                     <span>📅 Created: {new Date(post.created_at).toLocaleDateString()}</span>
-                    <span>⏰ Expires: {new Date(post.expires_at).toLocaleDateString()}</span>
+                    <span>⏰ Expires: {post.expires_at ? new Date(post.expires_at).toLocaleDateString() : 'N/A'}</span>
                   </div>
-
-                  {post.link_url && (
-                    <a 
-                      href={post.link_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="post-link"
-                    >
-                      🔗 {post.link_url}
-                    </a>
-                  )}
 
                   <div className="post-actions">
                     <button 
