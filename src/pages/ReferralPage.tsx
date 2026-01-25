@@ -51,6 +51,19 @@ const ReferralPage: React.FC = () => {
     return code ? `${baseUrl}/?ref=${code}` : '';
   }, [stats?.referral_code, member?.referral_code]);
 
+  const generateReferralCode = async () => {
+    try {
+      setError('');
+      const response = await ReferralAPI.generateReferralCode();
+      if (response.success) {
+        // Reload referral data to get the new code
+        await loadReferralData();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate referral code');
+    }
+  };
+
   const copyReferralLink = () => {
     if (!referralLink) {
       return;
@@ -130,9 +143,9 @@ const ReferralPage: React.FC = () => {
                   readOnly
                 />
                 <button
-                  onClick={copyReferralLink}
+                  onClick={referralLink ? copyReferralLink : generateReferralCode}
                   className="cta"
-                  disabled={!referralLink}
+                  disabled={false}
                 >
                   {!referralLink ? 'Generate link' : (copySuccess ? '✓ Copied!' : '📋 Copy Link')}
                 </button>

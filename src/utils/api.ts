@@ -531,6 +531,20 @@ export const ReferralAPI = {
       },
     };
   },
+
+  async generateReferralCode() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const updatedMember = MemberService.ensureReferralCode(member.id);
+    if (!updatedMember) throw new Error('Failed to generate referral code');
+
+    return {
+      success: true,
+      referral_code: updatedMember.referral_code,
+      member: updatedMember,
+    };
+  },
 };
 
 // Export for backward compatibility
