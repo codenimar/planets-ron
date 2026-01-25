@@ -52,6 +52,9 @@ const ReferralPage: React.FC = () => {
   }, [stats?.referral_code, member?.referral_code]);
 
   const copyReferralLink = () => {
+    if (!referralLink) {
+      return;
+    }
     navigator.clipboard.writeText(referralLink).then(() => {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
