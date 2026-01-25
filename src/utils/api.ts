@@ -537,7 +537,9 @@ export const ReferralAPI = {
     if (!member) throw new Error('Not authenticated');
 
     const updatedMember = MemberService.ensureReferralCode(member.id);
-    if (!updatedMember) throw new Error('Failed to generate referral code');
+    if (!updatedMember) {
+      throw new Error('Failed to generate referral code. Member not found.');
+    }
 
     return {
       success: true,

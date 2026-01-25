@@ -145,7 +145,6 @@ const ReferralPage: React.FC = () => {
                 <button
                   onClick={referralLink ? copyReferralLink : generateReferralCode}
                   className="cta"
-                  disabled={false}
                 >
                   {!referralLink ? 'Generate link' : (copySuccess ? '✓ Copied!' : '📋 Copy Link')}
                 </button>
