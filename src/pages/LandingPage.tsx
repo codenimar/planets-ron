@@ -16,25 +16,34 @@ const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
       <header className="landing-header">
-        <h1>🪙 Welcome to RoninAds</h1>
-        <p className="landing-subtitle">
-          Earn rewards by viewing ads. Publish your content to reach engaged users.
-        </p>
+        <div className="landing-hero">
+          <img src="/logo192.png" alt="RoninAds Logo" className="landing-logo" />
+          <h1>Welcome to RoninAds</h1>
+          <p className="landing-subtitle">
+            Earn rewards by viewing ads. Publish your content to reach engaged users.
+          </p>
+        </div>
       </header>
 
       <section className="features-section">
         <div className="feature-card">
-          <div className="feature-icon">👀</div>
+          <div className="feature-icon">
+            <img src="/logo192.png" alt="View & Earn" className="feature-icon-img" />
+          </div>
           <h3>View & Earn</h3>
           <p>Watch ads for 10 seconds and earn points. Boost earnings with Click Pass NFTs!</p>
         </div>
         <div className="feature-card">
-          <div className="feature-icon">📢</div>
+          <div className="feature-icon">
+            <img src="/logo192.png" alt="Publish Ads" className="feature-icon-img" />
+          </div>
           <h3>Publish Ads</h3>
           <p>Have a Publisher Pass? Create up to 3 ads and reach thousands of users.</p>
         </div>
         <div className="feature-card">
-          <div className="feature-icon">🎁</div>
+          <div className="feature-icon">
+            <img src="/logo192.png" alt="Claim Rewards" className="feature-icon-img" />
+          </div>
           <h3>Claim Rewards</h3>
           <p>Exchange your earned points for NFTs, tokens, and other exciting rewards.</p>
         </div>

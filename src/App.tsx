@@ -6,6 +6,8 @@ import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import PostsPage from './pages/PostsPage';
 import RewardsPage from './pages/RewardsPage';
+import ReferralPage from './pages/ReferralPage';
+import MailboxPage from './pages/MailboxPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import AdminPage from './pages/AdminPage';
@@ -60,6 +62,22 @@ function AppContent() {
             element={
               <PrivateRoute>
                 <RewardsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/referral"
+            element={
+              <PrivateRoute>
+                <ReferralPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/mailbox"
+            element={
+              <PrivateRoute>
+                <MailboxPage />
               </PrivateRoute>
             }
           />

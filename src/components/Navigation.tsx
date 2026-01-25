@@ -27,6 +27,8 @@ const Navigation: React.FC = () => {
               <Link to="/dashboard" className="nav-link">Dashboard</Link>
               <Link to="/posts" className="nav-link">Posts</Link>
               <Link to="/rewards" className="nav-link">Rewards</Link>
+              <Link to="/referral" className="nav-link">Referrals</Link>
+              <Link to="/mailbox" className="nav-link">Mailbox</Link>
               {member?.is_admin && (
                 <Link to="/admin" className="nav-link">Admin</Link>
               )}

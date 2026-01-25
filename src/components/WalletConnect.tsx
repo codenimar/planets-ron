@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RoninWalletConnector } from '@sky-mavis/tanto-connect';
 import { connectMetamask, disconnectWallet, WalletState } from '../utils/wallet';
 import { useAuth } from '../contexts/AuthContext';
 
 const WalletConnect: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  
+  const referralCode = searchParams.get('ref');
   
   const [roninWallet, setRoninWallet] = useState<WalletState>({
     address: null,
@@ -46,7 +49,7 @@ const WalletConnect: React.FC = () => {
 
   const handleLogin = async (address: string, walletType: 'ronin' | 'metamask') => {
     try {
-      await login(address, walletType);
+      await login(address, walletType, referralCode || undefined);
       setSuccess('Login successful! Redirecting to dashboard...');
       setTimeout(() => {
         navigate('/dashboard');

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { PostAPI, MemberAPI } from '../utils/api';
+import { PostAPI, MemberAPI, MessageAPI } from '../utils/api';
 import { Post, ClickPass, PublisherPass } from '../utils/localStorage';
-import Mailbox from '../components/Mailbox';
 
 interface Stats {
   total_points: number;
@@ -16,6 +16,7 @@ const Dashboard: React.FC = () => {
   const { member, refreshMember } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<string | null>(null);
   const [timer, setTimer] = useState(0);
@@ -29,9 +30,10 @@ const Dashboard: React.FC = () => {
   const loadDashboard = async () => {
     try {
       setLoading(true);
-      const [postsRes, statsRes] = await Promise.all([
+      const [postsRes, statsRes, unreadRes] = await Promise.all([
         PostAPI.list(),
         MemberAPI.getStats(),
+        MessageAPI.getUnreadCount(),
       ]);
 
       if (postsRes.success) {
@@ -39,6 +41,9 @@ const Dashboard: React.FC = () => {
       }
       if (statsRes.success) {
         setStats(statsRes.stats);
+      }
+      if (unreadRes.success) {
+        setUnreadCount(unreadRes.count);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard');
@@ -129,7 +134,15 @@ const Dashboard: React.FC = () => {
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
 
-      <Mailbox />
+      <div className="mailbox-indicator">
+        <Link to="/mailbox" className="mailbox-link">
+          <span className="mailbox-icon">📬</span>
+          <span className="mailbox-text">Mailbox</span>
+          {unreadCount > 0 && (
+            <span className="mailbox-unread-badge">{unreadCount}</span>
+          )}
+        </Link>
+      </div>
 
       <div className="posts-feed">
         <h2>📢 Posts Feed</h2>
