@@ -56,6 +56,9 @@ const ReferralPage: React.FC = () => {
     navigator.clipboard.writeText(link).then(() => {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
+    }).catch((err) => {
+      console.error('Failed to copy to clipboard:', err);
+      setError('Failed to copy link. Please try selecting and copying manually.');
     });
   };
 

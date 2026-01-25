@@ -308,8 +308,18 @@ export const MemberService = {
     const members = this.getAll();
     const config = getFromStorage<AppConfig>(STORAGE_KEYS.CONFIG, initializeDefaultConfig());
     
-    // Generate unique referral code
-    const referral_code = generateId().substring(0, 8).toUpperCase();
+    // Generate unique referral code with collision detection
+    let referral_code = '';
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    do {
+      referral_code = generateId().substring(0, 8).toUpperCase();
+      attempts++;
+    } while (
+      members.some(m => m.referral_code === referral_code) && 
+      attempts < maxAttempts
+    );
     
     // Find referrer if referral code provided
     let referred_by = null;
@@ -317,6 +327,8 @@ export const MemberService = {
       const referrer = members.find(m => m.referral_code === referredByCode);
       if (referrer) {
         referred_by = referrer.id;
+      } else {
+        console.warn(`Invalid referral code provided: ${referredByCode}`);
       }
     }
     
