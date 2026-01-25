@@ -120,20 +120,27 @@ const ReferralPage: React.FC = () => {
             </span>
           </div>
           <div className="referral-link-display">
-            <input
-              type="text"
-              value={getReferralLink()}
-              placeholder={getReferralLink() ? '' : 'Loading your referral code...'}
-              readOnly
-              className="referral-link-input"
-            />
-            <button 
-              onClick={copyReferralLink} 
-              className="btn btn-primary"
-              disabled={!getReferralLink()}
-            >
-              {!getReferralLink() ? 'Loading...' : (copySuccess ? '✓ Copied!' : '📋 Copy Link')}
-            </button>
+            {(() => {
+              const referralLink = getReferralLink();
+              return (
+                <>
+                  <input
+                    type="text"
+                    value={referralLink}
+                    placeholder={referralLink ? '' : 'Loading your referral code...'}
+                    readOnly
+                    className="referral-link-input"
+                  />
+                  <button 
+                    onClick={copyReferralLink} 
+                    className="btn btn-primary"
+                    disabled={!referralLink}
+                  >
+                    {!referralLink ? 'Loading...' : (copySuccess ? '✓ Copied!' : '📋 Copy Link')}
+                  </button>
+                </>
+              );
+            })()}
           </div>
         </div>
         <div className="referral-info">
