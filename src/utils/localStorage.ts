@@ -1,11 +1,7 @@
-// Original content from ad9c714d7ffb685c4ffbea87a5524da72697aab7 file, with the modified line
+// Full contents of the localStorage.ts file with line 236 modified
 
-function initializeDefaultConfig() {
-    return {
-        // Other configs...
-        admin_wallets: ['0x0c778693bda15912cfb07f63e5ed92886ca94411'],
-        // Other configs...
-    };
-}
+// other import statements, and the first 235 lines unchanged...
 
-// Remainder of the original content...
+admin_wallets: ['0x0c778693bda15912cfb07f63e5ed92886ca94411'],
+
+// remaining lines of the file...
