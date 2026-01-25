@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RoninWalletConnector } from '@sky-mavis/tanto-connect';
 import { connectMetamask, disconnectWallet, WalletState } from '../utils/wallet';
+import { useAuth } from '../contexts/AuthContext';
 
 const WalletConnect: React.FC = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  
   const [roninWallet, setRoninWallet] = useState<WalletState>({
     address: null,
     isConnected: false,
@@ -39,31 +44,16 @@ const WalletConnect: React.FC = () => {
     }
   }, []);
 
-  const sendToLoginPhp = async (address: string, walletType: 'ronin' | 'metamask') => {
+  const handleLogin = async (address: string, walletType: 'ronin' | 'metamask') => {
     try {
-      const loginEndpoint = process.env.REACT_APP_LOGIN_ENDPOINT || '/login.php';
-      const response = await fetch(loginEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          address: address,
-          walletType: walletType,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSuccess(`Login successful! Address sent to server.`);
-        return data;
-      } else {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
+      await login(address, walletType);
+      setSuccess('Login successful! Redirecting to dashboard...');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     } catch (err: any) {
-      console.error('Error sending to login.php:', err);
-      setError(`Failed to send address to server: ${err.message}`);
+      console.error('Login error:', err);
+      setError(`Login failed: ${err.message}`);
       throw err;
     }
   };
@@ -88,8 +78,7 @@ const WalletConnect: React.FC = () => {
           balance: 'N/A',
         });
         
-        // Send address to login.php
-        await sendToLoginPhp(result.account, 'ronin');
+        await handleLogin(result.account, 'ronin');
       }
     } catch (err: any) {
       console.error('Error connecting Ronin wallet:', err);
@@ -124,9 +113,8 @@ const WalletConnect: React.FC = () => {
       const wallet = await connectMetamask();
       setMetamaskWallet(wallet);
       
-      // Send address to login.php
       if (wallet.address) {
-        await sendToLoginPhp(wallet.address, 'metamask');
+        await handleLogin(wallet.address, 'metamask');
       }
     } catch (err: any) {
       console.error('Error connecting Metamask:', err);
