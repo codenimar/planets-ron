@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { PostAPI, MemberAPI } from '../utils/api';
 import { Post, ClickPass, PublisherPass } from '../utils/localStorage';
+import Mailbox from '../components/Mailbox';
 
 interface Stats {
   total_points: number;
@@ -127,6 +128,8 @@ const Dashboard: React.FC = () => {
 
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
+
+      <Mailbox />
 
       <div className="posts-feed">
         <h2>📢 Posts Feed</h2>

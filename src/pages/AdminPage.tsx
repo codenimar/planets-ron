@@ -5,10 +5,11 @@ import { AppConfig, NFTCollection, Reward } from '../utils/localStorage';
 
 const AdminPage: React.FC = () => {
   const { member } = useAuth();
-  const [activeTab, setActiveTab] = useState<'config' | 'posts' | 'claims' | 'passes' | 'data'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'posts' | 'claims' | 'passes' | 'users' | 'messages' | 'data'>('config');
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [pendingPosts, setPendingPosts] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -27,6 +28,11 @@ const AdminPage: React.FC = () => {
   const [newRewardType, setNewRewardType] = useState<'nft' | 'token'>('nft');
   const [newRewardCost, setNewRewardCost] = useState('100');
   const [newRewardQuantity, setNewRewardQuantity] = useState('10');
+
+  // Message form states
+  const [messageRecipient, setMessageRecipient] = useState<string>('all');
+  const [messageSubject, setMessageSubject] = useState('');
+  const [messageContent, setMessageContent] = useState('');
 
   useEffect(() => {
     if (member?.is_admin) {
@@ -54,6 +60,16 @@ const AdminPage: React.FC = () => {
         const claimsRes = await AdminAPI.getAllClaims();
         if (claimsRes.success) {
           setClaims(claimsRes.claims || []);
+        }
+      } else if (activeTab === 'users') {
+        const membersRes = await AdminAPI.getAllMembers();
+        if (membersRes.success) {
+          setMembers(membersRes.members || []);
+        }
+      } else if (activeTab === 'messages') {
+        const membersRes = await AdminAPI.getAllMembers();
+        if (membersRes.success) {
+          setMembers(membersRes.members || []);
         }
       }
     } catch (err: any) {
@@ -289,6 +305,55 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageSubject.trim() || !messageContent.trim()) return;
+
+    try {
+      const { MessageAPI } = await import('../utils/api');
+      const toMemberId = messageRecipient === 'all' ? null : messageRecipient;
+      
+      await MessageAPI.sendMessage(toMemberId, messageSubject.trim(), messageContent.trim());
+      
+      setSuccess(messageRecipient === 'all' ? 'Message sent to all members!' : 'Message sent successfully!');
+      setMessageSubject('');
+      setMessageContent('');
+      setMessageRecipient('all');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send message');
+    }
+  };
+
+  const handleUpdateMemberPoints = async (memberId: string, newPoints: number) => {
+    try {
+      await AdminAPI.updateMember(memberId, { points: newPoints });
+      setSuccess('Member points updated successfully');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update member');
+    }
+  };
+
+  const handleToggleMemberAdmin = async (memberId: string, isAdmin: boolean) => {
+    try {
+      await AdminAPI.updateMember(memberId, { is_admin: !isAdmin });
+      setSuccess('Member admin status updated successfully');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update member');
+    }
+  };
+
+  const handleToggleMemberActive = async (memberId: string, isActive: boolean) => {
+    try {
+      await AdminAPI.updateMember(memberId, { is_active: !isActive });
+      setSuccess('Member status updated successfully');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update member');
+    }
+  };
+
   if (!member?.is_admin) {
     return (
       <div className="admin-page">
@@ -330,6 +395,18 @@ const AdminPage: React.FC = () => {
             onClick={() => setActiveTab('passes')}
           >
             Give Passes
+          </button>
+          <button
+            className={activeTab === 'users' ? 'active' : ''}
+            onClick={() => setActiveTab('users')}
+          >
+            Users
+          </button>
+          <button
+            className={activeTab === 'messages' ? 'active' : ''}
+            onClick={() => setActiveTab('messages')}
+          >
+            Messages
           </button>
           <button
             className={activeTab === 'data' ? 'active' : ''}
@@ -692,6 +769,100 @@ const AdminPage: React.FC = () => {
                 <li><strong>Publisher Pass Gold:</strong> 30-day posts</li>
               </ul>
             </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'users' && (
+          <div className="admin-content">
+            <h2>User Management</h2>
+            <div className="admin-list">
+              {members.length === 0 ? (
+                <p>No users found</p>
+              ) : (
+                members.map((m: any) => (
+                  <div key={m.id} className="admin-list-item">
+                    <div>
+                      <strong>{m.wallet_address}</strong>
+                      <br />
+                      <small>Points: {m.points} | Admin: {m.is_admin ? 'Yes' : 'No'} | Status: {m.is_active ? 'Active' : 'Inactive'}</small>
+                      <br />
+                      <small>Joined: {new Date(m.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => {
+                          const newPoints = window.prompt(`Enter new points for ${m.wallet_address}`, m.points.toString());
+                          if (newPoints !== null) {
+                            handleUpdateMemberPoints(m.id, parseInt(newPoints) || 0);
+                          }
+                        }}
+                        className="btn btn-primary"
+                      >
+                        Edit Points
+                      </button>
+                      <button
+                        onClick={() => handleToggleMemberAdmin(m.id, m.is_admin)}
+                        className={m.is_admin ? 'btn btn-secondary' : 'btn btn-success'}
+                      >
+                        {m.is_admin ? 'Remove Admin' : 'Make Admin'}
+                      </button>
+                      <button
+                        onClick={() => handleToggleMemberActive(m.id, m.is_active)}
+                        className={m.is_active ? 'btn btn-danger' : 'btn btn-success'}
+                      >
+                        {m.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'messages' && (
+          <div className="admin-content">
+            <h2>Send Messages</h2>
+            <form onSubmit={handleSendMessage} className="admin-form">
+              <div className="form-group">
+                <label>Recipient:</label>
+                <select
+                  value={messageRecipient}
+                  onChange={(e) => setMessageRecipient(e.target.value)}
+                >
+                  <option value="all">📢 All Members (Broadcast)</option>
+                  {members.map((m: any) => (
+                    <option key={m.id} value={m.id}>
+                      {m.wallet_address}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Subject:</label>
+                <input
+                  type="text"
+                  value={messageSubject}
+                  onChange={(e) => setMessageSubject(e.target.value)}
+                  placeholder="Message subject"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Message:</label>
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  placeholder="Type your message here..."
+                  rows={6}
+                  required
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+              <button type="submit" className="btn btn-primary">
+                📨 Send Message
+              </button>
+            </form>
           </div>
         )}
 
