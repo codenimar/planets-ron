@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ReferralAPI } from '../utils/api';
 import { truncateWalletAddress } from '../utils/wallet';
@@ -45,15 +45,17 @@ const ReferralPage: React.FC = () => {
     }
   };
 
-  const getReferralLink = () => {
+  const referralLink = useMemo(() => {
     const baseUrl = window.location.origin;
-    const code = stats?.referral_code || member?.referral_code || 'LOADING';
-    return `${baseUrl}/?ref=${code}`;
-  };
+    const code = stats?.referral_code || member?.referral_code;
+    return code ? `${baseUrl}/?ref=${code}` : '';
+  }, [stats?.referral_code, member?.referral_code]);
 
   const copyReferralLink = () => {
-    const link = getReferralLink();
-    navigator.clipboard.writeText(link).then(() => {
+    if (!referralLink) {
+      return;
+    }
+    navigator.clipboard.writeText(referralLink).then(() => {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     }).catch((err) => {
@@ -115,17 +117,24 @@ const ReferralPage: React.FC = () => {
         <div className="referral-link-container">
           <div className="referral-code-display">
             <span className="code-label">Referral Code:</span>
-            <span className="code-value">{stats?.referral_code || member?.referral_code}</span>
+            <span className="code-value">
+              {stats?.referral_code || member?.referral_code || 'Loading...'}
+            </span>
           </div>
           <div className="referral-link-display">
             <input
               type="text"
-              value={getReferralLink()}
+              value={referralLink}
+              placeholder={referralLink ? '' : 'Loading your referral code...'}
               readOnly
               className="referral-link-input"
             />
-            <button onClick={copyReferralLink} className="btn btn-primary">
-              {copySuccess ? '✓ Copied!' : '📋 Copy Link'}
+            <button 
+              onClick={copyReferralLink} 
+              className="btn btn-primary"
+              disabled={!referralLink}
+            >
+              {!referralLink ? 'Loading...' : (copySuccess ? '✓ Copied!' : '📋 Copy Link')}
             </button>
           </div>
         </div>
