@@ -40,16 +40,21 @@ const RewardsPage: React.FC = () => {
   const loadRewards = async () => {
     try {
       setLoading(true);
-      const [rewardsRes, claimsRes] = await Promise.all([
+      const results = await Promise.allSettled([
         apiCall(API_ENDPOINTS.REWARDS_LIST),
         apiCall(API_ENDPOINTS.MY_CLAIMS),
       ]);
 
-      if (rewardsRes.success) {
-        setRewards(rewardsRes.rewards || []);
+      if (results[0].status === 'fulfilled' && results[0].value.success) {
+        setRewards(results[0].value.rewards || []);
       }
-      if (claimsRes.success) {
-        setClaims(claimsRes.claims || []);
+      if (results[1].status === 'fulfilled' && results[1].value.success) {
+        setClaims(results[1].value.claims || []);
+      }
+      
+      // If both failed, show error
+      if (results.every(r => r.status === 'rejected')) {
+        throw new Error('Failed to load rewards data');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load rewards');

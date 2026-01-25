@@ -98,8 +98,7 @@ CREATE TABLE IF NOT EXISTS post_views (
     FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
     INDEX idx_post_id (post_id),
     INDEX idx_member_id (member_id),
-    INDEX idx_viewed_at (viewed_at),
-    INDEX idx_post_member (post_id, member_id)
+    INDEX idx_post_member_time (post_id, member_id, viewed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Rewards table (NFTs or tokens)
