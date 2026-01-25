@@ -6,7 +6,7 @@ import { Member } from '../utils/localStorage';
 interface ReferralStats {
   total_referrals: number;
   referrals_with_claims: number;
-  referral_code: string;
+  referral_code?: string;
 }
 
 const ReferralPage: React.FC = () => {
