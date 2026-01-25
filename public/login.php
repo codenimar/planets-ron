@@ -74,71 +74,107 @@ if (!$isValidEthereumFormat && !$isValidRoninFormat) {
 }
 
 // Validate wallet type
-if (!in_array($walletType, ['ronin', 'metamask'])) {
+if (!in_array($walletType, ['ronin', 'metamask', 'waypoint'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid wallet type']);
     exit();
 }
 
-// Start session with secure configuration
-session_start();
+// Convert ronin: format to 0x format for consistency
+if ($isValidRoninFormat) {
+    $address = '0x' . substr($address, 6);
+}
 
-// Regenerate session ID to prevent session fixation attacks
-session_regenerate_id(true);
+// Database connection
+require_once __DIR__ . '/api/config.php';
 
-// Here you would typically:
-// 1. Store the login in a database
-// 2. Create a session
-// 3. Generate an authentication token
-// 4. Perform additional security checks
-
-// Example: Log to file (for demonstration purposes)
-$logEntry = [
-    'address' => $address,
-    'walletType' => $walletType,
-    'timestamp' => $timestamp,
-    'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-    'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
-    'sessionId' => session_id()
-];
-
-// Optionally save to a log file (stored outside web root for security)
-// NOTE: Ensure the path is outside the public directory in production
-// Example: '/var/log/app/wallet_logins.log' or '../logs/wallet_logins.log'
-$logFile = '../wallet_logins.log';
-@file_put_contents(
-    $logFile, 
-    json_encode($logEntry) . PHP_EOL, 
-    FILE_APPEND | LOCK_EX
-);
-
-// Store wallet info in session
-$_SESSION['wallet_address'] = $address;
-$_SESSION['wallet_type'] = $walletType;
-$_SESSION['login_time'] = time();
-$_SESSION['last_activity'] = time();
-$_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-$_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-$_SESSION['authenticated'] = true;
-
-// Generate a secure session token using cryptographically strong random bytes
-$sessionToken = bin2hex(random_bytes(32));
-$_SESSION['session_token'] = $sessionToken;
-
-// Generate CSRF token for additional security
-$csrfToken = bin2hex(random_bytes(32));
-$_SESSION['csrf_token'] = $csrfToken;
-
-// Return success response
-http_response_code(200);
-echo json_encode([
-    'success' => true,
-    'message' => 'Login successful',
-    'data' => [
-        'address' => $address,
-        'walletType' => $walletType,
-        'sessionToken' => $sessionToken,
-        'csrfToken' => $csrfToken,
-        'timestamp' => $timestamp
-    ]
-]);
+try {
+    $database = Database::getInstance();
+    $db = $database->getConnection();
+    
+    // Check if member exists
+    $stmt = $db->prepare('SELECT * FROM members WHERE wallet_address = ?');
+    $stmt->execute([$address]);
+    $member = $stmt->fetch();
+    
+    // Create new member if doesn't exist
+    if (!$member) {
+        $stmt = $db->prepare('
+            INSERT INTO members (wallet_address, wallet_type, points, is_active) 
+            VALUES (?, ?, 0, 1)
+        ');
+        $stmt->execute([$address, $walletType]);
+        $memberId = $db->lastInsertId();
+        
+        // Fetch the new member
+        $stmt = $db->prepare('SELECT * FROM members WHERE id = ?');
+        $stmt->execute([$memberId]);
+        $member = $stmt->fetch();
+    } else {
+        // Update last login
+        $stmt = $db->prepare('UPDATE members SET last_login = CURRENT_TIMESTAMP WHERE id = ?');
+        $stmt->execute([$member['id']]);
+    }
+    
+    // Check if member is active
+    if (!$member['is_active']) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Account is inactive']);
+        exit();
+    }
+    
+    // Start session
+    session_start();
+    session_regenerate_id(true);
+    
+    // Generate secure tokens
+    $sessionToken = bin2hex(random_bytes(32));
+    $csrfToken = bin2hex(random_bytes(32));
+    
+    // Store session in database
+    $expiresAt = date('Y-m-d H:i:s', time() + 3600);
+    $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+    
+    $stmt = $db->prepare('
+        INSERT INTO sessions (member_id, session_token, csrf_token, ip_address, user_agent, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ');
+    $stmt->execute([$member['id'], $sessionToken, $csrfToken, $ipAddress, $userAgent, $expiresAt]);
+    
+    // Set session variables
+    $_SESSION['authenticated'] = true;
+    $_SESSION['member_id'] = $member['id'];
+    $_SESSION['wallet_address'] = $address;
+    $_SESSION['wallet_type'] = $walletType;
+    $_SESSION['session_token'] = $sessionToken;
+    $_SESSION['csrf_token'] = $csrfToken;
+    $_SESSION['login_time'] = time();
+    $_SESSION['last_activity'] = time();
+    $_SESSION['ip_address'] = $ipAddress;
+    $_SESSION['user_agent'] = $userAgent;
+    
+    // Return success response
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'message' => 'Login successful',
+        'data' => [
+            'address' => $address,
+            'walletType' => $walletType,
+            'sessionToken' => $sessionToken,
+            'csrfToken' => $csrfToken,
+            'timestamp' => $timestamp,
+            'member' => [
+                'id' => $member['id'],
+                'points' => $member['points']
+            ]
+        ]
+    ]);
+    
+} catch (Exception $e) {
+    error_log('Login error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Login failed. Please try again.']);
+    exit();
+}
