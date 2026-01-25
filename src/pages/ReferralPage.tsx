@@ -46,7 +46,7 @@ const ReferralPage: React.FC = () => {
   };
 
   const referralLink = useMemo(() => {
-    const baseUrl = window.location.origin;
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const code = stats?.referral_code || member?.referral_code;
     return code ? `${baseUrl}/?ref=${code}` : '';
   }, [stats?.referral_code, member?.referral_code]);
@@ -72,116 +72,107 @@ const ReferralPage: React.FC = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="referral-page">
-        <div className="loading">Loading referral data...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="referral-page">
+    <div className="page-shell">
       <div className="page-header">
-        <h1>🤝 Referral Program</h1>
-        <p className="page-subtitle">
-          Share your referral link and earn 10 points every time your referrals claim a prize!
-        </p>
+        <div>
+          <p className="eyebrow">GROW</p>
+          <h1>Referral Program</h1>
+          <p className="lede">Share your link. Earn every time your network claims rewards.</p>
+        </div>
+        <div className="glow-pill">
+          <span className="dot-pulse"></span>
+          On-chain referrals
+        </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {loading ? (
+        <div className="card-panel center">
+          <div className="loading-spinner"></div>
+          <p>Loading referral data...</p>
+        </div>
+      ) : (
+        <>
+          {error && <div className="banner error">{error}</div>}
 
-      {stats && (
-        <div className="referral-stats-section">
-          <div className="stats-cards">
-            <div className="stat-card">
-              <div className="stat-icon">👥</div>
-              <div className="stat-content">
-                <div className="stat-value">{stats.total_referrals}</div>
+          {stats && (
+            <div className="stat-grid">
+              <div className="stat-tile">
                 <div className="stat-label">Total Referrals</div>
+                <div className="stat-number">{stats.total_referrals}</div>
+                <div className="stat-sub">People who used your link</div>
               </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">🎁</div>
-              <div className="stat-content">
-                <div className="stat-value">{stats.referrals_with_claims}</div>
+              <div className="stat-tile">
                 <div className="stat-label">Referrals with Claims</div>
+                <div className="stat-number">{stats.referrals_with_claims}</div>
+                <div className="stat-sub">Earn 10 pts each claim</div>
               </div>
             </div>
+          )}
+
+          <div className="card-panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">YOUR LINK</p>
+                <h2>Invite & Earn</h2>
+              </div>
+            </div>
+            <div className="link-row">
+              <div className="code-chip">
+                <span>Referral Code</span>
+                <strong>{stats?.referral_code || member?.referral_code || 'Not ready'}</strong>
+              </div>
+              <div className="input-chip">
+                <input
+                  type="text"
+                  value={referralLink}
+                  placeholder={referralLink ? '' : 'Referral code not generated yet'}
+                  readOnly
+                />
+                <button
+                  onClick={copyReferralLink}
+                  className="cta"
+                  disabled={!referralLink}
+                >
+                  {!referralLink ? 'Generate link' : (copySuccess ? '✓ Copied!' : '📋 Copy Link')}
+                </button>
+              </div>
+            </div>
+            <p className="muted">
+              Earn 10 points whenever a referred user claims a prize. Share with your community and track their activity below.
+            </p>
           </div>
-        </div>
+
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">PERFORMANCE</p>
+              <h2>Your Referrals ({referrals.length})</h2>
+            </div>
+          </div>
+
+          {referrals.length === 0 ? (
+            <div className="card-panel center">
+              <p>No referrals yet. Share your referral link to get started!</p>
+            </div>
+          ) : (
+            <div className="referral-cards">
+              {referrals.map((referral) => (
+                <div key={referral.id} className="referral-card">
+                  <div>
+                    <p className="eyebrow">Wallet</p>
+                    <h4>{truncateWalletAddress(referral.wallet_address)}</h4>
+                    <p className="muted">Joined {formatDate(referral.created_at)}</p>
+                  </div>
+                  <div className="referral-meta">
+                    <span className="chip">Points: {referral.points}</span>
+                    <span className="chip">Last login: {formatDate(referral.last_login)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
-
-      <div className="referral-link-section">
-        <h2>Your Referral Link</h2>
-        <div className="referral-link-container">
-          <div className="referral-code-display">
-            <span className="code-label">Referral Code:</span>
-            <span className="code-value">
-              {stats?.referral_code || member?.referral_code || 'Loading...'}
-            </span>
-          </div>
-          <div className="referral-link-display">
-            <input
-              type="text"
-              value={referralLink}
-              placeholder={referralLink ? '' : 'Loading your referral code...'}
-              readOnly
-              className="referral-link-input"
-            />
-            <button 
-              onClick={copyReferralLink} 
-              className="btn btn-primary"
-              disabled={!referralLink}
-            >
-              {!referralLink ? 'Loading...' : (copySuccess ? '✓ Copied!' : '📋 Copy Link')}
-            </button>
-          </div>
-        </div>
-        <div className="referral-info">
-          <p>
-            💡 <strong>How it works:</strong> When someone signs up using your referral link,
-            you'll earn 10 points every time they claim a prize!
-          </p>
-        </div>
-      </div>
-
-      <div className="referrals-list-section">
-        <h2>Your Referrals ({referrals.length})</h2>
-        
-        {referrals.length === 0 ? (
-          <div className="empty-state">
-            <p>No referrals yet. Share your referral link to get started!</p>
-          </div>
-        ) : (
-          <div className="referrals-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Wallet Address</th>
-                  <th>Points</th>
-                  <th>Joined Date</th>
-                  <th>Last Login</th>
-                </tr>
-              </thead>
-              <tbody>
-                {referrals.map((referral) => (
-                  <tr key={referral.id}>
-                    <td className="wallet-address">
-                      {truncateWalletAddress(referral.wallet_address)}
-                    </td>
-                    <td>
-                      <span className="points-badge">{referral.points} pts</span>
-                    </td>
-                    <td>{formatDate(referral.created_at)}</td>
-                    <td>{formatDate(referral.last_login)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 };

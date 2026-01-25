@@ -60,7 +60,7 @@ describe('ReferralPage', () => {
     });
 
     // Check that the input field shows placeholder text
-    const input = screen.getByPlaceholderText('Loading your referral code...');
+    const input = screen.getByPlaceholderText('Referral code not generated yet');
     expect(input).toBeInTheDocument();
     expect(input).toHaveValue('');
 
@@ -94,11 +94,9 @@ describe('ReferralPage', () => {
     });
 
     // Check that the referral code display shows "Loading..."
-    const loadingElements = screen.getAllByText('Loading...');
-    expect(loadingElements.length).toBeGreaterThan(0);
-    // One should be in the code-value span
-    const codeValueElement = screen.getByText('Referral Code:').nextElementSibling;
-    expect(codeValueElement).toHaveTextContent('Loading...');
+    const codeValueElement = screen.getByText('Referral Code').nextElementSibling as HTMLElement | null;
+    expect(codeValueElement).toBeInTheDocument();
+    expect(codeValueElement).toHaveTextContent(/Not ready/i);
   });
 
   test('should disable copy button when referral code is not available', async () => {
@@ -126,7 +124,7 @@ describe('ReferralPage', () => {
     });
 
     // Check that the copy button is disabled
-    const copyButton = screen.getByRole('button', { name: /Loading.../i });
+    const copyButton = screen.getByRole('button', { name: /Generate link/i });
     expect(copyButton).toBeDisabled();
   });
 

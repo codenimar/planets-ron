@@ -97,128 +97,127 @@ const RewardsPage: React.FC = () => {
     return <span className="status-badge" style={{ color: badge.color }}>{badge.text}</span>;
   };
 
-  if (loading) {
-    return (
-      <div className="rewards-page">
-        <div className="loading">Loading rewards...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="rewards-page">
-      <div className="rewards-header">
-        <h1>🎁 Rewards</h1>
-        <div className="points-display">
-          <span className="points-label">Your Points:</span>
-          <span className="points-value">💎 {member?.points || 0}</span>
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">REDEEM</p>
+          <h1>Rewards</h1>
+          <p className="lede">Exchange points for NFTs, tokens, and passes—inventory aware and instant.</p>
+        </div>
+        <div className="glow-pill">
+          <span className="dot-pulse"></span>
+          Balance: {member?.points || 0} pts
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+      {loading ? (
+        <div className="card-panel center">
+          <div className="loading-spinner"></div>
+          <p>Loading rewards...</p>
+        </div>
+      ) : (
+        <>
+          {error && <div className="banner error">{error}</div>}
+          {success && <div className="banner success">{success}</div>}
 
-      <div className="tabs">
-        <button
-          className={`tab ${activeTab === 'available' ? 'active' : ''}`}
-          onClick={() => setActiveTab('available')}
-        >
-          🛍️ Available Rewards
-        </button>
-        <button
-          className={`tab ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          📜 Claim History
-        </button>
-      </div>
+          <div className="tab-strip">
+            <button
+              className={activeTab === 'available' ? 'tab active' : 'tab'}
+              onClick={() => setActiveTab('available')}
+            >
+              🛍️ Available Rewards
+            </button>
+            <button
+              className={activeTab === 'history' ? 'tab active' : 'tab'}
+              onClick={() => setActiveTab('history')}
+            >
+              📜 Claim History
+            </button>
+          </div>
 
-      {activeTab === 'available' && (
-        <div className="rewards-grid">
-          {rewards.length === 0 ? (
-            <div className="empty-state">
-              <p>No rewards available at the moment. Check back soon!</p>
-            </div>
-          ) : (
-            rewards.map((reward) => (
-              <div key={reward.id} className="reward-card">
-                {reward.image_url ? (
-                  <div className="reward-image">
-                    <img src={reward.image_url} alt={reward.name} />
-                  </div>
-                ) : (
-                  <div className="reward-icon">
-                    {getRewardTypeIcon(reward.reward_type)}
-                  </div>
-                )}
-                <div className="reward-content">
-                  <h3>{reward.name}</h3>
-                  <p>{reward.description}</p>
-                  
-                  <div className="reward-info">
-                    <div className="reward-cost">
-                      💎 {reward.points_cost} points
-                    </div>
-                    <div className="reward-availability">
-                      📦 {reward.quantity_available} available
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleClaimReward(reward.id, reward.points_cost)}
-                    className="claim-button"
-                    disabled={
-                      claiming === reward.id ||
-                      (member?.points || 0) < reward.points_cost ||
-                      reward.quantity_available <= 0
-                    }
-                  >
-                    {claiming === reward.id
-                      ? '⏳ Claiming...'
-                      : reward.quantity_available <= 0
-                      ? '❌ Out of Stock'
-                      : (member?.points || 0) < reward.points_cost
-                      ? '🔒 Not Enough Points'
-                      : '🎁 Claim Reward'}
-                  </button>
+          {activeTab === 'available' && (
+            <div className="rewards-grid modern">
+              {rewards.length === 0 ? (
+                <div className="card-panel center">
+                  <p>No rewards available at the moment. Check back soon!</p>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {activeTab === 'history' && (
-        <div className="claims-list">
-          {claims.length === 0 ? (
-            <div className="empty-state">
-              <p>You haven't claimed any rewards yet. Check out the available rewards!</p>
+              ) : (
+                rewards.map((reward) => (
+                  <div key={reward.id} className="reward-card neo">
+                    <div className="reward-top">
+                      <div className="reward-icon">
+                        {reward.image_url ? (
+                          <img src={reward.image_url} alt={reward.name} />
+                        ) : (
+                          getRewardTypeIcon(reward.reward_type)
+                        )}
+                      </div>
+                      <div>
+                        <p className="eyebrow">{reward.reward_type}</p>
+                        <h3>{reward.name}</h3>
+                        <p className="muted">{reward.description}</p>
+                      </div>
+                    </div>
+                    <div className="reward-meta">
+                      <span className="chip">Cost: {reward.points_cost} pts</span>
+                      <span className="chip">Available: {reward.quantity_available}</span>
+                    </div>
+                    <button
+                      onClick={() => handleClaimReward(reward.id, reward.points_cost)}
+                      className="cta full"
+                      disabled={
+                        claiming === reward.id ||
+                        (member?.points || 0) < reward.points_cost ||
+                        reward.quantity_available <= 0
+                      }
+                    >
+                      {claiming === reward.id
+                        ? '⏳ Claiming...'
+                        : reward.quantity_available <= 0
+                        ? '❌ Out of Stock'
+                        : (member?.points || 0) < reward.points_cost
+                        ? '🔒 Not Enough Points'
+                        : '🎁 Claim Reward'}
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
-          ) : (
-            <div className="claims-grid">
-              {claims.map((claim) => (
-                <div key={claim.id} className="claim-card">
-                  <div className="claim-header">
-                    <h3>{claim.reward?.name || 'Unknown Reward'}</h3>
-                    {getStatusBadge(claim.status)}
-                  </div>
-                  <div className="claim-details">
-                    <p><strong>Points Spent:</strong> 💎 {claim.points_spent}</p>
-                    <p><strong>Claimed:</strong> {new Date(claim.claimed_at).toLocaleString()}</p>
-                    {claim.processed_at && (
-                      <p><strong>Processed:</strong> {new Date(claim.processed_at).toLocaleString()}</p>
-                    )}
-                  </div>
-                  {claim.status === 'pending' && (
+          )}
+
+          {activeTab === 'history' && (
+            <div className="claims-grid modern">
+              {claims.length === 0 ? (
+                <div className="card-panel center">
+                  <p>You haven't claimed any rewards yet. Check out the available rewards!</p>
+                </div>
+              ) : (
+                claims.map((claim) => (
+                  <div key={claim.id} className="claim-card neo">
+                    <div className="claim-header">
+                      <div>
+                        <p className="eyebrow">{claim.reward?.reward_type || 'N/A'}</p>
+                        <h3>{claim.reward?.name || 'Unknown Reward'}</h3>
+                      </div>
+                      {getStatusBadge(claim.status)}
+                    </div>
+                    <p className="muted">{claim.reward?.description}</p>
+                    <div className="claim-meta">
+                      <span className="chip">Spent: {claim.points_spent} pts</span>
+                      <span className="chip">
+                        Claimed: {new Date(claim.claimed_at).toLocaleDateString()}
+                      </span>
+                    </div>
                     <div className="claim-note">
-                      <p>ℹ️ Your reward claim is being processed. You'll be notified once it's fulfilled.</p>
+                      Status updates are handled by admins. You'll be notified when your reward is sent.
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                ))
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
