@@ -242,7 +242,7 @@ function initializeDefaultConfig(): AppConfig {
       cooldown_hours: 24,
       max_posts_per_publisher: 3,
     },
-  };
+  }; 
 }
 
 // Initialize storage if empty
@@ -348,6 +348,32 @@ export const MemberService = {
     members.push(newMember);
     saveToStorage(STORAGE_KEYS.MEMBERS, members);
     return newMember;
+  },
+
+  ensureReferralCode(id: string): Member | null {
+    const members = this.getAll();
+    const index = members.findIndex(m => m.id === id);
+    if (index === -1) return null;
+
+    if (members[index].referral_code) {
+      return members[index];
+    }
+
+    let referral_code = '';
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      referral_code = generateId().substring(0, 8).toUpperCase();
+      attempts++;
+    } while (
+      members.some(m => m.referral_code === referral_code) &&
+      attempts < maxAttempts
+    );
+
+    members[index] = { ...members[index], referral_code };
+    saveToStorage(STORAGE_KEYS.MEMBERS, members);
+    return members[index];
   },
 
   update(id: string, updates: Partial<Member>): Member | null {
