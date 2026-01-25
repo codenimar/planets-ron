@@ -6,7 +6,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   member: Member | null;
   loading: boolean;
-  login: (address: string, walletType: string) => Promise<void>;
+  login: (address: string, walletType: string, referralCode?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshMember: () => Promise<void>;
 }
@@ -53,9 +53,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkSession();
   }, []);
 
-  const login = async (address: string, walletType: string) => {
+  const login = async (address: string, walletType: string, referralCode?: string) => {
     try {
-      const response = await AuthAPI.login(address, walletType);
+      const response = await AuthAPI.login(address, walletType, referralCode);
 
       if (response.success) {
         setIsAuthenticated(true);

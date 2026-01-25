@@ -11,6 +11,8 @@ export interface Member {
   last_login: string;
   is_active: boolean;
   is_admin?: boolean;
+  referral_code?: string;
+  referred_by?: string | null;
 }
 
 export interface ClickPass {
@@ -302,9 +304,33 @@ export const MemberService = {
     return members.find(m => m.wallet_address.toLowerCase() === address.toLowerCase()) || null;
   },
 
-  create(wallet_address: string, wallet_type: string): Member {
+  create(wallet_address: string, wallet_type: string, referredByCode?: string): Member {
     const members = this.getAll();
     const config = getFromStorage<AppConfig>(STORAGE_KEYS.CONFIG, initializeDefaultConfig());
+    
+    // Generate unique referral code with collision detection
+    let referral_code = '';
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    do {
+      referral_code = generateId().substring(0, 8).toUpperCase();
+      attempts++;
+    } while (
+      members.some(m => m.referral_code === referral_code) && 
+      attempts < maxAttempts
+    );
+    
+    // Find referrer if referral code provided
+    let referred_by = null;
+    if (referredByCode) {
+      const referrer = members.find(m => m.referral_code === referredByCode);
+      if (referrer) {
+        referred_by = referrer.id;
+      } else {
+        console.warn(`Invalid referral code provided: ${referredByCode}`);
+      }
+    }
     
     const newMember: Member = {
       id: generateId(),
@@ -315,6 +341,8 @@ export const MemberService = {
       last_login: new Date().toISOString(),
       is_active: true,
       is_admin: config.admin_wallets.includes(wallet_address.toLowerCase()),
+      referral_code,
+      referred_by,
     };
 
     members.push(newMember);
@@ -331,6 +359,16 @@ export const MemberService = {
     members[index] = { ...members[index], ...updates };
     saveToStorage(STORAGE_KEYS.MEMBERS, members);
     return members[index];
+  },
+
+  getReferrals(memberId: string): Member[] {
+    const members = this.getAll();
+    return members.filter(m => m.referred_by === memberId);
+  },
+
+  getByReferralCode(code: string): Member | null {
+    const members = this.getAll();
+    return members.find(m => m.referral_code === code) || null;
   },
 
   addPoints(id: string, points: number, reason: string, relatedId: string | null = null): void {
@@ -570,6 +608,12 @@ export const RewardClaimService = {
 
     // Deduct points
     MemberService.addPoints(memberId, -pointsCost, `Claimed reward`, rewardId);
+
+    // Give referrer 10 points if member was referred
+    const member = MemberService.getById(memberId);
+    if (member && member.referred_by) {
+      MemberService.addPoints(member.referred_by, 10, `Referral ${member.wallet_address} claimed a prize`, memberId);
+    }
 
     return newClaim;
   },

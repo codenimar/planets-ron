@@ -3,14 +3,19 @@ import { render, screen } from '@testing-library/react';
 import App from './App';
 
 // Mock the react-router-dom
-jest.mock('react-router-dom', () => ({
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Routes: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Route: () => <div>Route</div>,
-  Navigate: () => <div>Navigate</div>,
-  Link: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  useNavigate: () => jest.fn(),
-}));
+jest.mock('react-router-dom', () => {
+  const actual = jest.requireActual('react-router-dom');
+  return {
+    ...actual,
+    BrowserRouter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    Routes: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    Route: () => <div>Route</div>,
+    Navigate: () => <div>Navigate</div>,
+    Link: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    useNavigate: () => jest.fn(),
+    useSearchParams: () => [new URLSearchParams(), jest.fn()],
+  };
+});
 
 // Mock the AuthContext to avoid API calls during tests
 jest.mock('./contexts/AuthContext', () => ({

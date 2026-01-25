@@ -50,7 +50,7 @@ function getCurrentMember(): Member | null {
 
 // Auth API
 export const AuthAPI = {
-  async login(address: string, walletType: string) {
+  async login(address: string, walletType: string, referralCode?: string) {
     try {
       // Get config to check admin status
       const config = ConfigService.get();
@@ -59,7 +59,7 @@ export const AuthAPI = {
       let member = MemberService.getByWalletAddress(address);
       
       if (!member) {
-        member = MemberService.create(address, walletType);
+        member = MemberService.create(address, walletType, referralCode);
       } else {
         // Update both last_login AND is_admin status
         MemberService.update(member.id, { 
@@ -493,6 +493,43 @@ export const MessageAPI = {
 
     MessageService.delete(messageId);
     return { success: true };
+  },
+};
+
+// Referral API
+export const ReferralAPI = {
+  async getReferrals() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const referrals = MemberService.getReferrals(member.id);
+    return { success: true, referrals };
+  },
+
+  async getReferralStats() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const referrals = MemberService.getReferrals(member.id);
+    const totalReferrals = referrals.length;
+    
+    // Count how many referrals have claimed prizes
+    let referralsWithClaims = 0;
+    referrals.forEach(referral => {
+      const claims = RewardClaimService.getByMember(referral.id);
+      if (claims.length > 0) {
+        referralsWithClaims++;
+      }
+    });
+
+    return {
+      success: true,
+      stats: {
+        total_referrals: totalReferrals,
+        referrals_with_claims: referralsWithClaims,
+        referral_code: member.referral_code,
+      },
+    };
   },
 };
 

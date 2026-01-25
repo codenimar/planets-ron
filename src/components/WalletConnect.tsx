@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RoninWalletConnector } from '@sky-mavis/tanto-connect';
-import { connectMetamask, disconnectWallet, WalletState } from '../utils/wallet';
+import { connectMetamask, disconnectWallet, truncateWalletAddress, WalletState } from '../utils/wallet';
 import { useAuth } from '../contexts/AuthContext';
 
 const WalletConnect: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  
+  const referralCode = searchParams.get('ref');
   
   const [roninWallet, setRoninWallet] = useState<WalletState>({
     address: null,
@@ -46,7 +49,7 @@ const WalletConnect: React.FC = () => {
 
   const handleLogin = async (address: string, walletType: 'ronin' | 'metamask') => {
     try {
-      await login(address, walletType);
+      await login(address, walletType, referralCode ?? undefined);
       setSuccess('Login successful! Redirecting to dashboard...');
       setTimeout(() => {
         navigate('/dashboard');
@@ -133,11 +136,6 @@ const WalletConnect: React.FC = () => {
     setSuccess('');
   };
 
-  const formatAddress = (address: string | null) => {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
   return (
     <div className="wallet-connect">
       <h2>Connect Your Wallet</h2>
@@ -169,7 +167,7 @@ const WalletConnect: React.FC = () => {
           ) : (
             <div className="wallet-info">
               <p className="wallet-address">
-                <strong>Address:</strong> {formatAddress(roninWallet.address)}
+                <strong>Address:</strong> {truncateWalletAddress(roninWallet.address || '')}
               </p>
               <p className="full-address" title={roninWallet.address || ''}>
                 {roninWallet.address}
@@ -198,7 +196,7 @@ const WalletConnect: React.FC = () => {
           ) : (
             <div className="wallet-info">
               <p className="wallet-address">
-                <strong>Address:</strong> {formatAddress(metamaskWallet.address)}
+                <strong>Address:</strong> {truncateWalletAddress(metamaskWallet.address || '')}
               </p>
               <p className="full-address" title={metamaskWallet.address || ''}>
                 {metamaskWallet.address}

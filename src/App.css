@@ -3134,3 +3134,284 @@
   }
 }
 
+
+/* Referral Page Styles */
+.referral-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.referral-stats-section {
+  margin-bottom: 2rem;
+}
+
+.referral-link-section {
+  background: #1a1b23;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid #282a36;
+}
+
+.referral-link-section h2 {
+  margin-bottom: 1.5rem;
+  color: #2d61ff;
+}
+
+.referral-link-container {
+  background: #0f1014;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.referral-code-display {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #282a36;
+}
+
+.code-label {
+  color: rgba(255, 255, 255, 0.6);
+  margin-right: 0.5rem;
+}
+
+.code-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d61ff;
+  font-family: monospace;
+}
+
+.referral-link-display {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.referral-link-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 0.75rem;
+  background: #282a36;
+  border: 1px solid #3a3d4a;
+  border-radius: 6px;
+  color: white;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.referral-info {
+  background: rgba(45, 97, 255, 0.1);
+  border-left: 3px solid #2d61ff;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.referral-info p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+}
+
+.referrals-list-section {
+  background: #1a1b23;
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid #282a36;
+}
+
+.referrals-list-section h2 {
+  margin-bottom: 1.5rem;
+  color: #2d61ff;
+}
+
+.referrals-table {
+  overflow-x: auto;
+}
+
+.referrals-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.referrals-table th,
+.referrals-table td {
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 1px solid #282a36;
+}
+
+.referrals-table th {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.referrals-table td {
+  color: white;
+}
+
+.wallet-address {
+  font-family: monospace;
+  color: #2d61ff;
+}
+
+.points-badge {
+  background: rgba(45, 97, 255, 0.2);
+  color: #2d61ff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Mailbox Page Styles */
+.mailbox-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Mailbox Indicator on Dashboard */
+.mailbox-indicator {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.mailbox-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #2d61ff 0%, #4a7dff 100%);
+  border-radius: 12px;
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.mailbox-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(45, 97, 255, 0.3);
+}
+
+.mailbox-icon {
+  font-size: 1.5rem;
+}
+
+.mailbox-text {
+  color: white;
+}
+
+.mailbox-unread-badge {
+  background: #ff4444;
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Landing Page Modern Styles */
+.landing-hero {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.landing-logo {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.landing-hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #2d61ff 0%, #4a7dff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.feature-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.feature-icon-img {
+  width: 80px;
+  height: 80px;
+  opacity: 0.9;
+  transition: transform 0.3s;
+}
+
+.feature-card:hover .feature-icon-img {
+  transform: scale(1.1);
+}
+
+/* Page Header Styles */
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 0.5rem;
+}
+
+/* Responsive Design for New Components */
+@media (max-width: 768px) {
+  .referral-link-display {
+    flex-direction: column;
+  }
+
+  .referral-link-input {
+    min-width: 100%;
+  }
+
+  .referrals-table {
+    font-size: 0.85rem;
+  }
+
+  .referrals-table th,
+  .referrals-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .landing-logo {
+    width: 80px;
+    height: 80px;
+  }
+
+  .landing-hero h1 {
+    font-size: 2rem;
+  }
+
+  .feature-icon-img {
+    width: 60px;
+    height: 60px;
+  }
+}
