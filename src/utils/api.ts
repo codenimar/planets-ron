@@ -384,10 +384,18 @@ export const AdminAPI = {
     if (!member?.is_admin) throw new Error('Admin access required');
 
     if (passKind === 'click') {
-      const pass = PassService.addClickPass(memberId, passType as any);
+      const validClickTypes = ['Basic', 'Silver', 'Golden'];
+      if (!validClickTypes.includes(passType)) {
+        throw new Error(`Invalid click pass type. Must be one of: ${validClickTypes.join(', ')}`);
+      }
+      const pass = PassService.addClickPass(memberId, passType as 'Basic' | 'Silver' | 'Golden');
       return { success: true, pass };
     } else {
-      const pass = PassService.addPublisherPass(memberId, passType as any);
+      const validPublisherTypes = ['Basic', 'Silver', 'Gold'];
+      if (!validPublisherTypes.includes(passType)) {
+        throw new Error(`Invalid publisher pass type. Must be one of: ${validPublisherTypes.join(', ')}`);
+      }
+      const pass = PassService.addPublisherPass(memberId, passType as 'Basic' | 'Silver' | 'Gold');
       return { success: true, pass };
     }
   },
