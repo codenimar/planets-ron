@@ -1,14 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiCall, API_ENDPOINTS } from '../utils/api';
-
-interface Member {
-  id: number;
-  wallet_address: string;
-  wallet_type: string;
-  points: number;
-  created_at: string;
-  last_login: string;
-}
+import { AuthAPI, MemberAPI } from '../utils/api';
+import { Member } from '../utils/localStorage';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -40,7 +32,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkSession = async () => {
     try {
-      const response = await apiCall(API_ENDPOINTS.CHECK_SESSION);
+      const response = await AuthAPI.checkSession();
       if (response.authenticated) {
         setIsAuthenticated(true);
         setMember(response.member);
@@ -63,14 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (address: string, walletType: string) => {
     try {
-      const response = await apiCall(API_ENDPOINTS.LOGIN, {
-        method: 'POST',
-        body: JSON.stringify({
-          address,
-          walletType,
-          timestamp: new Date().toISOString(),
-        }),
-      });
+      const response = await AuthAPI.login(address, walletType);
 
       if (response.success) {
         setIsAuthenticated(true);
@@ -86,9 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await apiCall(API_ENDPOINTS.LOGOUT, {
-        method: 'POST',
-      });
+      await AuthAPI.logout();
       setIsAuthenticated(false);
       setMember(null);
     } catch (error) {
@@ -99,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshMember = async () => {
     try {
-      const response = await apiCall(API_ENDPOINTS.MEMBER_PROFILE);
+      const response = await MemberAPI.getProfile();
       if (response.success && response.member) {
         setMember(response.member);
       }
