@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ReferralAPI } from '../utils/api';
+import { truncateWalletAddress } from '../utils/wallet';
 import { Member } from '../utils/localStorage';
 
 interface ReferralStats {
@@ -46,7 +47,8 @@ const ReferralPage: React.FC = () => {
 
   const getReferralLink = () => {
     const baseUrl = window.location.origin;
-    return `${baseUrl}/?ref=${stats?.referral_code || member?.referral_code}`;
+    const code = stats?.referral_code || member?.referral_code || 'LOADING';
+    return `${baseUrl}/?ref=${code}`;
   };
 
   const copyReferralLink = () => {
@@ -154,8 +156,7 @@ const ReferralPage: React.FC = () => {
                 {referrals.map((referral) => (
                   <tr key={referral.id}>
                     <td className="wallet-address">
-                      {referral.wallet_address.substring(0, 6)}...
-                      {referral.wallet_address.substring(referral.wallet_address.length - 4)}
+                      {truncateWalletAddress(referral.wallet_address)}
                     </td>
                     <td>
                       <span className="points-badge">{referral.points} pts</span>

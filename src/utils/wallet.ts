@@ -35,3 +35,10 @@ export const disconnectWallet = (): WalletState => {
     balance: null,
   };
 };
+
+export const truncateWalletAddress = (address: string, startChars: number = 6, endChars: number = 4): string => {
+  if (!address || address.length < startChars + endChars) {
+    return address;
+  }
+  return `${address.substring(0, startChars)}...${address.substring(address.length - endChars)}`;
+};
