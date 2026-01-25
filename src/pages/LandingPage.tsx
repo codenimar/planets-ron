@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import WalletConnect from '../components/WalletConnect';
+import RecentDistributions from '../components/RecentDistributions';
 
 const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -68,6 +69,8 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      <RecentDistributions />
 
       <footer className="landing-footer">
         <p>Secure wallet authentication on the Ronin Network</p>

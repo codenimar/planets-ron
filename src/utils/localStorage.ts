@@ -113,6 +113,25 @@ export interface Session {
   created_at: string;
 }
 
+export interface Message {
+  id: string;
+  from_member_id: string;
+  to_member_id: string | null; // null means broadcast to all
+  subject: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  read_at: string | null;
+}
+
+export interface RewardDistribution {
+  id: string;
+  reward_id: string;
+  member_id: string;
+  distributed_at: string;
+  notes: string;
+}
+
 export interface AppConfig {
   nft_collections: NFTCollection[];
   rewards: Reward[];
@@ -139,6 +158,8 @@ const STORAGE_KEYS = {
   POINTS_HISTORY: 'roninads_points_history',
   SESSIONS: 'roninads_sessions',
   CONFIG: 'roninads_config',
+  MESSAGES: 'roninads_messages',
+  REWARD_DISTRIBUTIONS: 'roninads_reward_distributions',
 };
 
 // Utility function to generate unique IDs
@@ -256,6 +277,12 @@ export function initializeStorage(): void {
   }
   if (!localStorage.getItem(STORAGE_KEYS.MEMBER_NFTS)) {
     saveToStorage(STORAGE_KEYS.MEMBER_NFTS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.MESSAGES)) {
+    saveToStorage(STORAGE_KEYS.MESSAGES, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.REWARD_DISTRIBUTIONS)) {
+    saveToStorage(STORAGE_KEYS.REWARD_DISTRIBUTIONS, []);
   }
 }
 
@@ -661,6 +688,8 @@ export const ConfigService = {
       clickPasses: getFromStorage<ClickPass[]>(STORAGE_KEYS.CLICK_PASSES, []),
       publisherPasses: getFromStorage<PublisherPass[]>(STORAGE_KEYS.PUBLISHER_PASSES, []),
       pointsHistory: getFromStorage<PointsHistory[]>(STORAGE_KEYS.POINTS_HISTORY, []),
+      messages: MessageService.getAll(),
+      rewardDistributions: RewardDistributionService.getAll(),
       config: this.get(),
     };
     return JSON.stringify(data, null, 2);
@@ -677,6 +706,8 @@ export const ConfigService = {
       if (data.clickPasses) saveToStorage(STORAGE_KEYS.CLICK_PASSES, data.clickPasses);
       if (data.publisherPasses) saveToStorage(STORAGE_KEYS.PUBLISHER_PASSES, data.publisherPasses);
       if (data.pointsHistory) saveToStorage(STORAGE_KEYS.POINTS_HISTORY, data.pointsHistory);
+      if (data.messages) saveToStorage(STORAGE_KEYS.MESSAGES, data.messages);
+      if (data.rewardDistributions) saveToStorage(STORAGE_KEYS.REWARD_DISTRIBUTIONS, data.rewardDistributions);
       if (data.config) saveToStorage(STORAGE_KEYS.CONFIG, data.config);
       
       return true;
@@ -691,5 +722,94 @@ export const ConfigService = {
       localStorage.removeItem(key);
     });
     initializeStorage();
+  },
+};
+
+// Message operations
+export const MessageService = {
+  getAll(): Message[] {
+    return getFromStorage<Message[]>(STORAGE_KEYS.MESSAGES, []);
+  },
+
+  getById(id: string): Message | null {
+    const messages = this.getAll();
+    return messages.find(m => m.id === id) || null;
+  },
+
+  getByRecipient(memberId: string): Message[] {
+    const messages = this.getAll();
+    return messages.filter(m => m.to_member_id === memberId || m.to_member_id === null);
+  },
+
+  getUnreadCount(memberId: string): number {
+    const messages = this.getByRecipient(memberId);
+    return messages.filter(m => !m.is_read).length;
+  },
+
+  create(fromMemberId: string, toMemberId: string | null, subject: string, content: string): Message {
+    const messages = this.getAll();
+
+    const newMessage: Message = {
+      id: generateId(),
+      from_member_id: fromMemberId,
+      to_member_id: toMemberId,
+      subject,
+      content,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      read_at: null,
+    };
+
+    messages.push(newMessage);
+    saveToStorage(STORAGE_KEYS.MESSAGES, messages);
+    return newMessage;
+  },
+
+  markAsRead(id: string): Message | null {
+    const messages = this.getAll();
+    const index = messages.findIndex(m => m.id === id);
+    
+    if (index === -1) return null;
+
+    messages[index].is_read = true;
+    messages[index].read_at = new Date().toISOString();
+    saveToStorage(STORAGE_KEYS.MESSAGES, messages);
+    return messages[index];
+  },
+
+  delete(id: string): void {
+    const messages = this.getAll();
+    const filtered = messages.filter(m => m.id !== id);
+    saveToStorage(STORAGE_KEYS.MESSAGES, filtered);
+  },
+};
+
+// Reward Distribution operations
+export const RewardDistributionService = {
+  getAll(): RewardDistribution[] {
+    return getFromStorage<RewardDistribution[]>(STORAGE_KEYS.REWARD_DISTRIBUTIONS, []);
+  },
+
+  getRecent(limit: number = 10): RewardDistribution[] {
+    const distributions = this.getAll();
+    return distributions
+      .sort((a, b) => new Date(b.distributed_at).getTime() - new Date(a.distributed_at).getTime())
+      .slice(0, limit);
+  },
+
+  create(rewardId: string, memberId: string, notes: string): RewardDistribution {
+    const distributions = this.getAll();
+
+    const newDistribution: RewardDistribution = {
+      id: generateId(),
+      reward_id: rewardId,
+      member_id: memberId,
+      distributed_at: new Date().toISOString(),
+      notes,
+    };
+
+    distributions.push(newDistribution);
+    saveToStorage(STORAGE_KEYS.REWARD_DISTRIBUTIONS, distributions);
+    return newDistribution;
   },
 };

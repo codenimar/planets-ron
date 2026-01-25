@@ -8,6 +8,8 @@ import {
   RewardClaimService,
   PassService,
   ConfigService,
+  MessageService,
+  RewardDistributionService,
   initializeStorage,
   Member,
   Post,
@@ -398,6 +400,88 @@ export const AdminAPI = {
       const pass = PassService.addPublisherPass(memberId, passType as 'Basic' | 'Silver' | 'Gold');
       return { success: true, pass };
     }
+  },
+
+  async getAllMembers() {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const members = MemberService.getAll();
+    return { success: true, members };
+  },
+
+  async updateMember(memberId: string, updates: Partial<Member>) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const updatedMember = MemberService.update(memberId, updates);
+    return { success: true, member: updatedMember };
+  },
+
+  async recordRewardDistribution(rewardId: string, memberId: string, notes: string) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const distribution = RewardDistributionService.create(rewardId, memberId, notes);
+    return { success: true, distribution };
+  },
+
+  async getRecentDistributions(limit: number = 10) {
+    const distributions = RewardDistributionService.getRecent(limit);
+    const distributionsWithDetails = distributions.map(d => ({
+      ...d,
+      reward: RewardService.getById(d.reward_id),
+      member: MemberService.getById(d.member_id),
+    }));
+    return { success: true, distributions: distributionsWithDetails };
+  },
+};
+
+// Message API
+export const MessageAPI = {
+  async getMessages() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const messages = MessageService.getByRecipient(member.id);
+    const messagesWithSender = messages.map(msg => ({
+      ...msg,
+      from_member: MemberService.getById(msg.from_member_id),
+    }));
+
+    return { success: true, messages: messagesWithSender };
+  },
+
+  async getUnreadCount() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const count = MessageService.getUnreadCount(member.id);
+    return { success: true, count };
+  },
+
+  async markAsRead(messageId: string) {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const message = MessageService.markAsRead(messageId);
+    return { success: true, message };
+  },
+
+  async sendMessage(toMemberId: string | null, subject: string, content: string) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required to send messages');
+
+    const message = MessageService.create(member.id, toMemberId, subject, content);
+    return { success: true, message };
+  },
+
+  async deleteMessage(messageId: string) {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    MessageService.delete(messageId);
+    return { success: true };
   },
 };
 
