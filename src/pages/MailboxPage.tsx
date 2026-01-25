@@ -3,10 +3,17 @@ import Mailbox from '../components/Mailbox';
 
 const MailboxPage: React.FC = () => {
   return (
-    <div className="mailbox-page">
+    <div className="page-shell">
       <div className="page-header">
-        <h1>📬 Mailbox</h1>
-        <p className="page-subtitle">View your messages and notifications</p>
+        <div>
+          <p className="eyebrow">INBOX</p>
+          <h1>Mailbox</h1>
+          <p className="lede">Stay updated with broadcasts and admin messages.</p>
+        </div>
+        <div className="glow-pill">
+          <span className="dot-pulse"></span>
+          Live updates
+        </div>
       </div>
       <Mailbox />
     </div>

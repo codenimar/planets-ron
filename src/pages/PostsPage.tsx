@@ -143,65 +143,81 @@ const PostsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="posts-page">
-        <div className="loading">Loading posts...</div>
+      <div className="page-shell">
+        <div className="card-panel center">
+          <div className="loading-spinner"></div>
+          <p>Loading posts...</p>
+        </div>
       </div>
     );
   }
 
   if (!passInfo?.publisher_pass) {
     return (
-      <div className="posts-page">
-        <div className="no-access">
-          <h2>🔒 Publisher Pass Required</h2>
-          <p>You need a Publisher Pass NFT to create and manage posts.</p>
-          <p>Visit the Rewards page to learn more about Publisher Passes.</p>
+      <div className="page-shell">
+        <div className="card-panel center">
+          <h3>🔒 Publisher Pass Required</h3>
+          <p>Grab a pass from Rewards to start creating campaigns.</p>
+          <button className="cta" onClick={() => window.location.assign('/rewards')}>See Rewards</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="posts-page">
-      <div className="posts-header">
-        <h1>📝 My Posts</h1>
-        <div className="pass-info">
-          <p>
-            <strong>Pass Type:</strong> {passInfo.publisher_pass?.pass_type || 'Basic'} |{' '}
-            <strong>Post Duration:</strong> {passInfo.publisher_pass?.duration_days || 3} days
-          </p>
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">PUBLISH</p>
+          <h1>My Posts</h1>
+          <p className="lede">Create, review, and activate your campaigns with pass-gated controls.</p>
+        </div>
+        <div className="glow-pill">
+          <span className="dot-pulse"></span>
+          Publisher console
+        </div>
+      </div>
+
+      <div className="card-panel split">
+        <div>
+          <p className="eyebrow">PASS STATUS</p>
+          <h3>{passInfo.publisher_pass.pass_type} Publisher Pass</h3>
+          <p className="muted">Post duration: {passInfo.publisher_pass.duration_days} days</p>
         </div>
         {!creating && !editing && (
-          <button onClick={() => setCreating(true)} className="create-button">
+          <button onClick={() => setCreating(true)} className="cta">
             ➕ Create New Post
           </button>
         )}
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+      {error && <div className="banner error">{error}</div>}
+      {success && <div className="banner success">{success}</div>}
 
       {(creating || editing) && (
-        <div className="post-form-container">
-          <h2>{editing ? '✏️ Edit Post' : '➕ Create New Post'}</h2>
-          <form onSubmit={editing ? handleUpdatePost : handleCreatePost} className="post-form">
-            <div className="form-group">
-              <label htmlFor="title">Title *</label>
+        <div className="card-panel">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">{editing ? 'EDIT' : 'CREATE'}</p>
+              <h2>{editing ? 'Edit Post' : 'Create New Post'}</h2>
+            </div>
+            <button className="cta ghost" onClick={cancelEdit}>Close</button>
+          </div>
+          <form onSubmit={editing ? handleUpdatePost : handleCreatePost} className="form-grid">
+            <label>
+              <span>Title *</span>
               <input
                 type="text"
-                id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
                 maxLength={100}
                 required
               />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="content">Content *</label>
+            </label>
+            <label>
+              <span>Content *</span>
               <textarea
-                id="content"
                 name="content"
                 value={formData.content}
                 onChange={handleInputChange}
@@ -209,12 +225,10 @@ const PostsPage: React.FC = () => {
                 rows={4}
                 required
               />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="postType">Post Type *</label>
+            </label>
+            <label>
+              <span>Post Type *</span>
               <select
-                id="postType"
                 name="postType"
                 value={formData.postType}
                 onChange={handleInputChange}
@@ -224,58 +238,61 @@ const PostsPage: React.FC = () => {
                 <option value="ad">Ad</option>
                 <option value="announcement">Announcement</option>
               </select>
-            </div>
-
+            </label>
             <div className="form-actions">
-              <button type="submit" className="submit-button">
-                {editing ? '💾 Update Post' : '🚀 Create Post'}
+              <button type="submit" className="cta">
+                {editing ? 'Save Changes' : 'Create Post'}
               </button>
-              <button type="button" onClick={cancelEdit} className="cancel-button">
-                ❌ Cancel
+              <button type="button" onClick={cancelEdit} className="cta ghost">
+                Cancel
               </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="posts-list">
-        <h2>Your Posts ({posts.length})</h2>
-        {posts.length === 0 ? (
-          <div className="empty-state">
-            <p>You haven't created any posts yet. Click "Create New Post" to get started!</p>
-          </div>
-        ) : (
-          <div className="posts-grid">
-            {posts.map((post) => (
-              <div key={post.id} className="post-card">
-                <div className="post-content">
-                  <div className="post-header">
-                    <h3>{post.title}</h3>
-                    {getStatusBadge(post.status)}
-                  </div>
-                  <p>{post.content}</p>
-                  <div className="post-type-badge">{post.post_type}</div>
-                  
-                  <div className="post-meta">
-                    <span>📅 Created: {new Date(post.created_at).toLocaleDateString()}</span>
-                    <span>⏰ Expires: {post.expires_at ? new Date(post.expires_at).toLocaleDateString() : 'N/A'}</span>
-                  </div>
-
-                  <div className="post-actions">
-                    <button 
-                      onClick={() => handleEdit(post)} 
-                      className="edit-button"
-                      disabled={post.status === 'expired'}
-                    >
-                      ✏️ Edit
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">YOUR CAMPAIGNS</p>
+          <h2>Posts ({posts.length})</h2>
+        </div>
       </div>
+
+      {posts.length === 0 ? (
+        <div className="card-panel center">
+          <p>No posts yet. Create your first campaign!</p>
+        </div>
+      ) : (
+        <div className="post-tiles">
+          {posts.map((post) => (
+            <div key={post.id} className="post-tile">
+              <div className="tile-top">
+                <div>
+                  <p className="eyebrow">{post.post_type}</p>
+                  <h3>{post.title}</h3>
+                  <p className="muted">{post.content}</p>
+                </div>
+                {getStatusBadge(post.status)}
+              </div>
+              <div className="tile-meta">
+                <span className="chip">Status: {post.status}</span>
+                <span className="chip">
+                  Expires: {post.expires_at ? new Date(post.expires_at).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+              <div className="tile-actions">
+                <button
+                  onClick={() => handleEdit(post)}
+                  className="cta ghost"
+                  disabled={post.status === 'expired'}
+                >
+                  ✏️ Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -16,14 +16,14 @@ const Navigation: React.FC = () => {
   };
 
   return (
-    <nav className="navigation">
+    <nav className="navigation frosted">
       <div className="nav-container">
         <div className="nav-left">
           <Link to="/" className="nav-logo">
             🪙 RoninAds
           </Link>
           {isAuthenticated && (
-            <>
+            <div className="nav-links">
               <Link to="/dashboard" className="nav-link">Dashboard</Link>
               <Link to="/posts" className="nav-link">Posts</Link>
               <Link to="/rewards" className="nav-link">Rewards</Link>
@@ -32,15 +32,7 @@ const Navigation: React.FC = () => {
               {member?.is_admin && (
                 <Link to="/admin" className="nav-link">Admin</Link>
               )}
-              <a 
-                href="https://x.com/planetronin" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="nav-link"
-              >
-                Contact
-              </a>
-            </>
+            </div>
           )}
         </div>
         
@@ -50,14 +42,23 @@ const Navigation: React.FC = () => {
           
           {isAuthenticated && member && (
             <>
-              <div className="nav-points">
-                💎 {member.points} points
+              <div className="nav-pill">
+                <span className="dot-pulse"></span>
+                {member.points} pts
               </div>
               <button onClick={handleLogout} className="nav-logout">
                 Logout
               </button>
             </>
           )}
+          <a 
+            href="https://x.com/planetronin" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="nav-link"
+          >
+            Contact
+          </a>
         </div>
       </div>
     </nav>

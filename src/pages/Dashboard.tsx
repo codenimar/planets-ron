@@ -90,100 +90,96 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="dashboard-page">
-        <div className="loading">Loading dashboard...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-header">
-        <h1>📊 Dashboard</h1>
-        <div className="stats-cards">
-          <div className="stat-card">
-            <div className="stat-icon">💎</div>
-            <div className="stat-content">
-              <div className="stat-value">{member?.points || 0}</div>
-              <div className="stat-label">Total Points</div>
-            </div>
-          </div>
-          {stats && (
-            <>
-              <div className="stat-card">
-                <div className="stat-icon">👁️</div>
-                <div className="stat-content">
-                  <div className="stat-value">{stats.total_views}</div>
-                  <div className="stat-label">Total Views</div>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">🎁</div>
-                <div className="stat-content">
-                  <div className="stat-value">{stats.total_claims}</div>
-                  <div className="stat-label">Rewards Claimed</div>
-                </div>
-              </div>
-            </>
-          )}
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">CONTROL CENTER</p>
+          <h1>Dashboard</h1>
+          <p className="lede">Track your earnings, check messages, and keep campaigns active.</p>
+        </div>
+        <div className="glow-pill">
+          <span className="dot-pulse"></span>
+          Live session
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      <div className="mailbox-indicator">
-        <Link to="/mailbox" className="mailbox-link">
-          <span className="mailbox-icon">📬</span>
-          <span className="mailbox-text">Mailbox</span>
-          {unreadCount > 0 && (
-            <span className="mailbox-unread-badge">{unreadCount}</span>
-          )}
-        </Link>
-      </div>
-
-      <div className="posts-feed">
-        <h2>📢 Posts Feed</h2>
-        
-        {posts.length === 0 ? (
-          <div className="empty-state">
-            <p>No posts available at the moment. Check back soon!</p>
+      {loading ? (
+        <div className="card-panel center">
+          <div className="loading-spinner"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      ) : (
+        <>
+          <div className="stat-grid">
+            <div className="stat-tile">
+              <div className="stat-label">Total Points</div>
+              <div className="stat-number">{member?.points || 0}</div>
+              <div className="stat-sub">Earn more by stacking passes & NFTs</div>
+            </div>
+            <div className="stat-tile">
+              <div className="stat-label">Total Views</div>
+              <div className="stat-number">{stats?.total_views ?? 0}</div>
+              <div className="stat-sub">Cooldown enforced per 24h</div>
+            </div>
+            <div className="stat-tile">
+              <div className="stat-label">Rewards Claimed</div>
+              <div className="stat-number">{stats?.total_claims ?? 0}</div>
+              <div className="stat-sub">Instant redemption history</div>
+            </div>
+            <div className="stat-tile">
+              <div className="stat-label">Mailbox</div>
+              <div className="stat-number">{unreadCount}</div>
+              <Link to="/mailbox" className="pill-link">View messages →</Link>
+            </div>
           </div>
-        ) : (
-          <div className="posts-grid">
-            {posts.map((post) => (
-              <div key={post.id} className="post-card">
-                <div className="post-content">
-                  <h3>{post.title}</h3>
-                  <p>{post.content}</p>
-                  
-                  <div className="post-meta">
-                    <span className="post-type">{post.post_type}</span>
-                    <span className="post-status">{post.status}</span>
-                  </div>
 
+          {error && <div className="banner error">{error}</div>}
+          {success && <div className="banner success">{success}</div>}
+
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">EARN FLOW</p>
+              <h2>Active Posts</h2>
+            </div>
+          </div>
+
+          {posts.length === 0 ? (
+            <div className="card-panel center">
+              <p>No posts available right now. Check back soon!</p>
+            </div>
+          ) : (
+            <div className="post-tiles">
+              {posts.map((post) => (
+                <div key={post.id} className="post-tile">
+                  <div className="tile-top">
+                    <div>
+                      <p className="eyebrow">{post.post_type}</p>
+                      <h3>{post.title}</h3>
+                      <p className="muted">{post.content}</p>
+                    </div>
+                    <span className={`status-dot ${post.status}`}>{post.status}</span>
+                  </div>
                   {viewing === post.id ? (
-                    <div className="viewing-timer">
-                      <div className="timer-circle">{timer}</div>
-                      <p>Keep watching to earn points...</p>
+                    <div className="timer-strip">
+                      <div className="timer-count">{timer}s</div>
+                      <p>Keep watching to finish and earn points.</p>
                     </div>
                   ) : (
-                    <button 
-                      onClick={() => handleViewPost(post.id)} 
-                      className="view-button"
+                    <button
+                      onClick={() => handleViewPost(post.id)}
+                      className="cta full"
                       disabled={viewing !== null}
                     >
-                      👀 View & Earn Points
+                      👀 View & Earn
                     </button>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
