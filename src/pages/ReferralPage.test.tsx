@@ -99,7 +99,7 @@ describe('ReferralPage', () => {
     expect(codeValueElement).toHaveTextContent(/Not ready/i);
   });
 
-  test('should disable copy button when referral code is not available', async () => {
+  test('should enable generate button when referral code is not available', async () => {
     useAuth.mockReturnValue({
       member: null,
     });
@@ -123,9 +123,9 @@ describe('ReferralPage', () => {
       expect(screen.queryByText('Loading referral data...')).not.toBeInTheDocument();
     });
 
-    // Check that the copy button is disabled
-    const copyButton = screen.getByRole('button', { name: /Generate link/i });
-    expect(copyButton).toBeDisabled();
+    // Check that the generate button is enabled
+    const generateButton = screen.getByRole('button', { name: /Generate link/i });
+    expect(generateButton).not.toBeDisabled();
   });
 
   test('should show valid referral link when code is available', async () => {
