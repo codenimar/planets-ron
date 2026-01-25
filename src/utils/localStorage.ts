@@ -233,7 +233,7 @@ function initializeDefaultConfig(): AppConfig {
         created_at: new Date().toISOString(),
       },
     ],
-    admin_wallets: ['0x0C778693BDa15912CFB07f63E5ed92886CA94411'],  // ✅ CORRECT
+    admin_wallets: ['0x0c778693bda15912cfb07f63e5ed92886ca94411'],  // ✅ CORRECT
     app_settings: {
       base_points_per_view: 1,
       view_duration_required: 10,
