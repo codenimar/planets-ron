@@ -13,6 +13,9 @@ import {
   Post,
 } from './localStorage';
 
+// Re-export ConfigService for convenience
+export { ConfigService };
+
 // Initialize storage on module load
 initializeStorage();
 

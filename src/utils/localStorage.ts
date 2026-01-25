@@ -143,7 +143,7 @@ const STORAGE_KEYS = {
 
 // Utility function to generate unique IDs
 function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
 // Generic storage functions
@@ -622,7 +622,6 @@ export const PassService = {
   },
 };
 
-// Configuration operations
 export const ConfigService = {
   get(): AppConfig {
     return getFromStorage<AppConfig>(STORAGE_KEYS.CONFIG, initializeDefaultConfig());

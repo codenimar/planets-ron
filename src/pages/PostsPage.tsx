@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { PostAPI, MemberAPI } from '../utils/api';
-import { Post } from '../utils/localStorage';
+import { PostAPI, MemberAPI, ConfigService } from '../utils/api';
+import { Post, ClickPass, PublisherPass } from '../utils/localStorage';
 
 interface PassInfo {
-  click_pass: any;
-  publisher_pass: any;
+  click_pass: ClickPass | null;
+  publisher_pass: PublisherPass | null;
 }
 
 const PostsPage: React.FC = () => {
@@ -69,7 +69,8 @@ const PostsPage: React.FC = () => {
     }
 
     const activePosts = posts.filter((p) => p.status === 'active' || p.status === 'pending').length;
-    const maxPosts = 3; // From config
+    const config = ConfigService.get();
+    const maxPosts = config.app_settings.max_posts_per_publisher;
     if (activePosts >= maxPosts) {
       setError(`You can only have ${maxPosts} active posts at a time`);
       return;

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { PostAPI, MemberAPI } from '../utils/api';
-import { Post } from '../utils/localStorage';
+import { Post, ClickPass, PublisherPass } from '../utils/localStorage';
 
 interface Stats {
   total_points: number;
   total_views: number;
   total_claims: number;
-  click_pass: any;
-  publisher_pass: any;
+  click_pass: ClickPass | null;
+  publisher_pass: PublisherPass | null;
 }
 
 const Dashboard: React.FC = () => {
