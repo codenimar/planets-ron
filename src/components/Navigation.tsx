@@ -27,6 +27,9 @@ const Navigation: React.FC = () => {
               <Link to="/dashboard" className="nav-link">Dashboard</Link>
               <Link to="/posts" className="nav-link">Posts</Link>
               <Link to="/rewards" className="nav-link">Rewards</Link>
+              {member?.is_admin && (
+                <Link to="/admin" className="nav-link">Admin</Link>
+              )}
               <a 
                 href="https://x.com/planetronin" 
                 target="_blank" 
