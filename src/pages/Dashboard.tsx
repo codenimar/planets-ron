@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
     setSuccess('');
 
     const countdown = setInterval(() => {
-      setTimer((prev) => {
+      setTimer((prev: number) => {
         if (prev <= 1) {
           clearInterval(countdown);
           completeView(postId);
@@ -101,7 +101,7 @@ const Dashboard: React.FC = () => {
             <div className="stat-icon">💎</div>
             <div className="stat-content">
               <div className="stat-value">{member?.points || 0}</div>
-              <div className="stat-label">Total Points</div>
+              <div className="stat-label">Total Pointa</div>
             </div>
           </div>
           {stats && (
