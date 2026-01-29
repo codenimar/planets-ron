@@ -396,11 +396,11 @@ export const MemberService = {
     const config = getFromStorage<AppConfig>(STORAGE_KEYS.CONFIG, initializeDefaultConfig());
     
     // Generate unique referral code with collision detection
+    const isReferralCodeTaken = (code: string) => members.some(m => m.referral_code === code);
+    
     let referral_code = '';
     let attempts = 0;
     const maxAttempts = 10;
-    
-    const isReferralCodeTaken = (code: string) => members.some(m => m.referral_code === code);
     
     do {
       referral_code = generateId().substring(0, 8).toUpperCase();
@@ -448,11 +448,11 @@ export const MemberService = {
       return members[index];
     }
 
+    const isReferralCodeTaken = (code: string) => members.some(m => m.referral_code === code);
+
     let referral_code = '';
     let attempts = 0;
     const maxAttempts = 10;
-
-    const isReferralCodeTaken = (code: string) => members.some(m => m.referral_code === code);
 
     do {
       referral_code = generateId().substring(0, 8).toUpperCase();

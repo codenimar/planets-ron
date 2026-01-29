@@ -53,6 +53,7 @@ const AdminPage: React.FC = () => {
   const [newWeekItemName, setNewWeekItemName] = useState('');
   const [newWeekItemQuantity, setNewWeekItemQuantity] = useState('10');
   const [selectedWeekWinners, setSelectedWeekWinners] = useState<any[]>([]);
+  const [selectedWeekId, setSelectedWeekId] = useState<string>('');
 
   useEffect(() => {
     if (member?.is_admin) {
@@ -500,6 +501,7 @@ const AdminPage: React.FC = () => {
       const winnersRes = await WeeklyRewardAPI.getWinners(weeklyRewardId);
       if (winnersRes.success) {
         setSelectedWeekWinners(winnersRes.winners || []);
+        setSelectedWeekId(weeklyRewardId);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load winners');
@@ -507,14 +509,13 @@ const AdminPage: React.FC = () => {
   };
 
   const handleDownloadWinners = (weeklyRewardId: string, weekName: string) => {
-    const winners = selectedWeekWinners;
-    if (!winners || winners.length === 0) {
-      setError('No winners to download');
+    if (selectedWeekId !== weeklyRewardId || !selectedWeekWinners || selectedWeekWinners.length === 0) {
+      setError('Please view winners first before downloading');
       return;
     }
 
     const csvContent = 'Ronin Address,Item Number\n' + 
-      winners.map(w => `${w.ronin_address},${w.item_number}`).join('\n');
+      selectedWeekWinners.map(w => `${w.ronin_address},${w.item_number}`).join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -1338,7 +1339,7 @@ const AdminPage: React.FC = () => {
                         >
                           View Winners
                         </button>
-                        {selectedWeekWinners.length > 0 && (
+                        {selectedWeekId === week.id && selectedWeekWinners.length > 0 && (
                           <button
                             onClick={() => handleDownloadWinners(week.id, week.item_name)}
                             className="btn btn-success"
