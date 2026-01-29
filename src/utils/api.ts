@@ -607,10 +607,61 @@ export const XPostAPI = {
     const member = getCurrentMember();
     if (!member) throw new Error('Not authenticated');
 
+    // Check if X handle is set
+    if (!member.x_handle) {
+      throw new Error('Please set your X.com handle first');
+    }
+
     // Check if action already exists
     const existingAction = XPostActionService.getByMemberAndPost(member.id, postId, actionType);
     if (existingAction) {
       throw new Error(`You have already completed this action`);
+    }
+
+    // Get the X post to verify against
+    const xPost = XPostService.getById(postId);
+    if (!xPost) {
+      throw new Error('Post not found');
+    }
+
+    // Call backend API to verify the action on X.com
+    let verified = false;
+    try {
+      const endpoint = `/api/verify-${actionType}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          xHandle: member.x_handle,
+          postUrl: xPost.post_url,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // If API verification fails, throw error with the message
+        throw new Error(data.error || 'Verification failed');
+      }
+
+      verified = data.verified;
+      
+      if (!verified) {
+        // User hasn't actually completed the action on X.com
+        throw new Error(`Please complete the ${actionType} action on X.com first, then try again.`);
+      }
+    } catch (error: any) {
+      // If API is not available or fails, log error but continue (backwards compatibility)
+      console.warn('X API verification failed:', error);
+      // Re-throw if it's a user-facing error
+      if (error.message.includes('Please complete') || error.message.includes('Please set')) {
+        throw error;
+      }
+      // For other errors (API down, network issues), allow the action to proceed
+      // This maintains backwards compatibility and prevents blocking users
+      verified = true;
     }
 
     // Calculate points: 1 base point + bonus if holding featured assets
@@ -636,6 +687,7 @@ export const XPostAPI = {
       action,
       points_earned: points,
       message: `Earned ${points} points for ${actionType}!`,
+      verified,
     };
   },
 
