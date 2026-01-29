@@ -251,9 +251,24 @@ const Dashboard: React.FC = () => {
 
       <div className="panel">
         <h2>📋 Available Tasks</h2>
-        <p className="lede" style={{ marginBottom: '1.5rem' }}>
+        <p className="lede" style={{ marginBottom: '1rem' }}>
           Complete actions on X.com to earn points. Each action is worth 1 point (2 points with bonus).
         </p>
+        <div style={{ 
+          padding: '1rem', 
+          marginBottom: '1.5rem',
+          background: 'rgba(102, 126, 234, 0.1)',
+          border: '1px solid rgba(102, 126, 234, 0.3)',
+          borderRadius: '8px',
+        }}>
+          <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: '1.6' }}>
+            <strong>How it works:</strong><br/>
+            1. Click "View Post on X.com" to open the post<br/>
+            2. Follow the account, like the post, and retweet it on X.com<br/>
+            3. Return here and click the verify buttons to claim your points<br/>
+            <em style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Note: Our system will check X.com API to verify you actually completed each action.</em>
+          </p>
+        </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -309,22 +324,37 @@ const Dashboard: React.FC = () => {
                           className={`cta pill ${hasCompletedAction(post.id, 'follow') ? 'ghost' : 'primary'}`}
                           onClick={() => handleVerifyAction(post.id, 'follow')}
                           disabled={hasCompletedAction(post.id, 'follow') || actionLoading === `${post.id}-follow`}
+                          title="Click to verify you've followed on X.com"
                         >
-                          {hasCompletedAction(post.id, 'follow') ? '✓ Followed' : 'Follow'}
+                          {actionLoading === `${post.id}-follow` 
+                            ? '⏳ Verifying...' 
+                            : hasCompletedAction(post.id, 'follow') 
+                              ? '✓ Followed' 
+                              : '👤 Verify Follow'}
                         </button>
                         <button
                           className={`cta pill ${hasCompletedAction(post.id, 'like') ? 'ghost' : 'primary'}`}
                           onClick={() => handleVerifyAction(post.id, 'like')}
                           disabled={hasCompletedAction(post.id, 'like') || actionLoading === `${post.id}-like`}
+                          title="Click to verify you've liked on X.com"
                         >
-                          {hasCompletedAction(post.id, 'like') ? '✓ Liked' : 'Like'}
+                          {actionLoading === `${post.id}-like` 
+                            ? '⏳ Verifying...' 
+                            : hasCompletedAction(post.id, 'like') 
+                              ? '✓ Liked' 
+                              : '❤️ Verify Like'}
                         </button>
                         <button
                           className={`cta pill ${hasCompletedAction(post.id, 'retweet') ? 'ghost' : 'primary'}`}
                           onClick={() => handleVerifyAction(post.id, 'retweet')}
                           disabled={hasCompletedAction(post.id, 'retweet') || actionLoading === `${post.id}-retweet`}
+                          title="Click to verify you've retweeted on X.com"
                         >
-                          {hasCompletedAction(post.id, 'retweet') ? '✓ Retweeted' : 'Retweet'}
+                          {actionLoading === `${post.id}-retweet` 
+                            ? '⏳ Verifying...' 
+                            : hasCompletedAction(post.id, 'retweet') 
+                              ? '✓ Retweeted' 
+                              : '🔄 Verify Retweet'}
                         </button>
                       </div>
 
