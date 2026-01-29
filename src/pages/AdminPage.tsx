@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { AdminAPI, ConfigService } from '../utils/api';
+import { AdminAPI, ConfigService, XPostAPI, FeaturedAssetAPI, WeeklyRewardAPI } from '../utils/api';
 import { AppConfig, NFTCollection, Reward } from '../utils/localStorage';
 
 const AdminPage: React.FC = () => {
   const { member } = useAuth();
-  const [activeTab, setActiveTab] = useState<'config' | 'posts' | 'claims' | 'passes' | 'users' | 'messages' | 'data'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'posts' | 'claims' | 'passes' | 'users' | 'messages' | 'data' | 'xposts' | 'assets' | 'weekly'>('config');
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [pendingPosts, setPendingPosts] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
@@ -33,6 +33,26 @@ const AdminPage: React.FC = () => {
   const [messageRecipient, setMessageRecipient] = useState<string>('all');
   const [messageSubject, setMessageSubject] = useState('');
   const [messageContent, setMessageContent] = useState('');
+
+  // X Posts states
+  const [xPosts, setXPosts] = useState<any[]>([]);
+  const [newXPostUrl, setNewXPostUrl] = useState('');
+  const [newXPostImageUrl, setNewXPostImageUrl] = useState('');
+
+  // Featured Assets states
+  const [featuredAssets, setFeaturedAssets] = useState<any[]>([]);
+  const [newAssetType, setNewAssetType] = useState<'nft_collection' | 'token'>('nft_collection');
+  const [newAssetName, setNewAssetName] = useState('');
+  const [newAssetContractAddress, setNewAssetContractAddress] = useState('');
+  const [newAssetRequiredAmount, setNewAssetRequiredAmount] = useState('1');
+  const [newAssetBonusMultiplier, setNewAssetBonusMultiplier] = useState('2');
+
+  // Weekly Rewards states
+  const [weeklyRewards, setWeeklyRewards] = useState<any[]>([]);
+  const [currentWeeklyReward, setCurrentWeeklyReward] = useState<any>(null);
+  const [newWeekItemName, setNewWeekItemName] = useState('');
+  const [newWeekItemQuantity, setNewWeekItemQuantity] = useState('10');
+  const [selectedWeekWinners, setSelectedWeekWinners] = useState<any[]>([]);
 
   useEffect(() => {
     if (member?.is_admin) {
@@ -70,6 +90,25 @@ const AdminPage: React.FC = () => {
         const membersRes = await AdminAPI.getAllMembers();
         if (membersRes.success) {
           setMembers(membersRes.members || []);
+        }
+      } else if (activeTab === 'xposts') {
+        const xPostsRes = await XPostAPI.getAll();
+        if (xPostsRes.success) {
+          setXPosts(xPostsRes.posts || []);
+        }
+      } else if (activeTab === 'assets') {
+        const assetsRes = await FeaturedAssetAPI.getAll();
+        if (assetsRes.success) {
+          setFeaturedAssets(assetsRes.assets || []);
+        }
+      } else if (activeTab === 'weekly') {
+        const currentRes = await WeeklyRewardAPI.getCurrent();
+        if (currentRes.success) {
+          setCurrentWeeklyReward(currentRes.weekly_reward);
+        }
+        const allWeeksRes = await WeeklyRewardAPI.getAllWeeks();
+        if (allWeeksRes.success) {
+          setWeeklyRewards(allWeeksRes.weekly_rewards || []);
         }
       }
     } catch (err: any) {
@@ -354,6 +393,141 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  // X Posts handlers
+  const handleAddXPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newXPostUrl.trim() || !newXPostImageUrl.trim()) return;
+
+    try {
+      await XPostAPI.create(newXPostUrl.trim(), newXPostImageUrl.trim());
+      setSuccess('X post added successfully');
+      setNewXPostUrl('');
+      setNewXPostImageUrl('');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to add X post');
+    }
+  };
+
+  const handleToggleXPostStatus = async (postId: string, isActive: boolean) => {
+    try {
+      await XPostAPI.update(postId, { is_active: !isActive });
+      setSuccess('X post status updated');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update X post');
+    }
+  };
+
+  const handleDeleteXPost = async (postId: string) => {
+    if (!window.confirm('Are you sure you want to delete this X post?')) return;
+    
+    try {
+      await XPostAPI.delete(postId);
+      setSuccess('X post deleted');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete X post');
+    }
+  };
+
+  // Featured Assets handlers
+  const handleAddFeaturedAsset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAssetName.trim() || !newAssetContractAddress.trim()) return;
+
+    try {
+      await FeaturedAssetAPI.create(
+        newAssetType,
+        newAssetName.trim(),
+        newAssetContractAddress.trim(),
+        parseInt(newAssetRequiredAmount) || 1,
+        parseFloat(newAssetBonusMultiplier) || 2
+      );
+      setSuccess('Featured asset added successfully');
+      setNewAssetName('');
+      setNewAssetContractAddress('');
+      setNewAssetRequiredAmount('1');
+      setNewAssetBonusMultiplier('2');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to add featured asset');
+    }
+  };
+
+  const handleToggleAssetStatus = async (assetId: string, isActive: boolean) => {
+    try {
+      await FeaturedAssetAPI.update(assetId, { is_active: !isActive });
+      setSuccess('Featured asset status updated');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update featured asset');
+    }
+  };
+
+  const handleDeleteFeaturedAsset = async (assetId: string) => {
+    if (!window.confirm('Are you sure you want to delete this featured asset?')) return;
+    
+    try {
+      await FeaturedAssetAPI.delete(assetId);
+      setSuccess('Featured asset deleted');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete featured asset');
+    }
+  };
+
+  // Weekly Rewards handlers
+  const handleRestartWeek = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWeekItemName.trim() || !newWeekItemQuantity) return;
+
+    if (!window.confirm('This will end the current week and generate winners. Continue?')) return;
+
+    try {
+      await WeeklyRewardAPI.restartWeek(newWeekItemName.trim(), parseInt(newWeekItemQuantity) || 10);
+      setSuccess('Week restarted successfully!');
+      setNewWeekItemName('');
+      setNewWeekItemQuantity('10');
+      loadAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to restart week');
+    }
+  };
+
+  const handleViewWinners = async (weeklyRewardId: string) => {
+    try {
+      const winnersRes = await WeeklyRewardAPI.getWinners(weeklyRewardId);
+      if (winnersRes.success) {
+        setSelectedWeekWinners(winnersRes.winners || []);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to load winners');
+    }
+  };
+
+  const handleDownloadWinners = (weeklyRewardId: string, weekName: string) => {
+    const winners = selectedWeekWinners;
+    if (!winners || winners.length === 0) {
+      setError('No winners to download');
+      return;
+    }
+
+    const csvContent = 'Ronin Address,Item Number\n' + 
+      winners.map(w => `${w.ronin_address},${w.item_number}`).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `winners-${weekName}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setSuccess('Winners list downloaded');
+  };
+
   if (!member?.is_admin) {
     return (
       <div className="admin-page">
@@ -413,6 +587,24 @@ const AdminPage: React.FC = () => {
             onClick={() => setActiveTab('data')}
           >
             Data Management
+          </button>
+          <button
+            className={activeTab === 'xposts' ? 'active' : ''}
+            onClick={() => setActiveTab('xposts')}
+          >
+            X Posts
+          </button>
+          <button
+            className={activeTab === 'assets' ? 'active' : ''}
+            onClick={() => setActiveTab('assets')}
+          >
+            Featured Assets
+          </button>
+          <button
+            className={activeTab === 'weekly' ? 'active' : ''}
+            onClick={() => setActiveTab('weekly')}
+          >
+            Weekly Rewards
           </button>
         </div>
 
@@ -898,6 +1090,285 @@ const AdminPage: React.FC = () => {
                 Clear All Data
               </button>
             </section>
+          </div>
+        )}
+
+        {!loading && activeTab === 'xposts' && (
+          <div className="admin-content">
+            <h2>X Posts Management</h2>
+            <section className="admin-section">
+              <h3>Add New X Post</h3>
+              <form onSubmit={handleAddXPost} className="admin-form">
+                <div className="form-group">
+                  <label>Post URL:</label>
+                  <input
+                    type="url"
+                    value={newXPostUrl}
+                    onChange={(e) => setNewXPostUrl(e.target.value)}
+                    placeholder="https://x.com/username/status/..."
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Image URL:</label>
+                  <input
+                    type="url"
+                    value={newXPostImageUrl}
+                    onChange={(e) => setNewXPostImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.png"
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Add X Post
+                </button>
+              </form>
+            </section>
+
+            <section className="admin-section">
+              <h3>X Posts List</h3>
+              {xPosts.length === 0 ? (
+                <p>No X posts added yet</p>
+              ) : (
+                <div className="admin-list">
+                  {xPosts.map((post) => (
+                    <div key={post.id} className="admin-list-item">
+                      <div>
+                        <strong>Post URL:</strong> <a href={post.post_url} target="_blank" rel="noopener noreferrer">{post.post_url}</a>
+                        <br />
+                        <strong>Image:</strong> <a href={post.image_url} target="_blank" rel="noopener noreferrer">{post.image_url}</a>
+                        <br />
+                        <small>Created: {new Date(post.created_at).toLocaleString()}</small>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={() => handleToggleXPostStatus(post.id, post.is_active)}
+                          className={post.is_active ? 'btn btn-success' : 'btn btn-secondary'}
+                        >
+                          {post.is_active ? 'Active' : 'Inactive'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteXPost(post.id)}
+                          className="btn btn-danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {!loading && activeTab === 'assets' && (
+          <div className="admin-content">
+            <h2>Featured Assets Management</h2>
+            <section className="admin-section">
+              <h3>Add New Featured Asset</h3>
+              <form onSubmit={handleAddFeaturedAsset} className="admin-form">
+                <div className="form-group">
+                  <label>Asset Type:</label>
+                  <select
+                    value={newAssetType}
+                    onChange={(e) => setNewAssetType(e.target.value as 'nft_collection' | 'token')}
+                    required
+                  >
+                    <option value="nft_collection">NFT Collection</option>
+                    <option value="token">Token</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Name:</label>
+                  <input
+                    type="text"
+                    value={newAssetName}
+                    onChange={(e) => setNewAssetName(e.target.value)}
+                    placeholder="Asset name"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Contract Address:</label>
+                  <input
+                    type="text"
+                    value={newAssetContractAddress}
+                    onChange={(e) => setNewAssetContractAddress(e.target.value)}
+                    placeholder="0x..."
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Required Amount:</label>
+                  <input
+                    type="number"
+                    value={newAssetRequiredAmount}
+                    onChange={(e) => setNewAssetRequiredAmount(e.target.value)}
+                    min="1"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Bonus Multiplier:</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newAssetBonusMultiplier}
+                    onChange={(e) => setNewAssetBonusMultiplier(e.target.value)}
+                    min="1"
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Add Featured Asset
+                </button>
+              </form>
+            </section>
+
+            <section className="admin-section">
+              <h3>Featured Assets List</h3>
+              {featuredAssets.length === 0 ? (
+                <p>No featured assets added yet</p>
+              ) : (
+                <div className="admin-list">
+                  {featuredAssets.map((asset) => (
+                    <div key={asset.id} className="admin-list-item">
+                      <div>
+                        <strong>{asset.name}</strong> ({asset.asset_type})
+                        <br />
+                        <small>Contract: {asset.contract_address}</small>
+                        <br />
+                        <small>Required Amount: {asset.required_amount} | Bonus: {asset.bonus_multiplier}x</small>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={() => handleToggleAssetStatus(asset.id, asset.is_active)}
+                          className={asset.is_active ? 'btn btn-success' : 'btn btn-secondary'}
+                        >
+                          {asset.is_active ? 'Active' : 'Inactive'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFeaturedAsset(asset.id)}
+                          className="btn btn-danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {!loading && activeTab === 'weekly' && (
+          <div className="admin-content">
+            <h2>Weekly Rewards Management</h2>
+            <section className="admin-section">
+              <h3>Current Active Week</h3>
+              {currentWeeklyReward ? (
+                <div className="admin-list">
+                  <div className="admin-list-item">
+                    <div>
+                      <strong>{currentWeeklyReward.item_name}</strong>
+                      <br />
+                      <small>Quantity: {currentWeeklyReward.item_quantity}</small>
+                      <br />
+                      <small>Week Start: {new Date(currentWeeklyReward.week_start).toLocaleDateString()}</small>
+                      <br />
+                      <small>Week End: {new Date(currentWeeklyReward.week_end).toLocaleDateString()}</small>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p>No active weekly reward</p>
+              )}
+            </section>
+
+            <section className="admin-section">
+              <h3>Restart Week</h3>
+              <form onSubmit={handleRestartWeek} className="admin-form">
+                <div className="form-group">
+                  <label>Item Name:</label>
+                  <input
+                    type="text"
+                    value={newWeekItemName}
+                    onChange={(e) => setNewWeekItemName(e.target.value)}
+                    placeholder="Prize item name"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Item Quantity:</label>
+                  <input
+                    type="number"
+                    value={newWeekItemQuantity}
+                    onChange={(e) => setNewWeekItemQuantity(e.target.value)}
+                    min="1"
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  🔄 Restart Week
+                </button>
+              </form>
+            </section>
+
+            <section className="admin-section">
+              <h3>Previous Weeks</h3>
+              {weeklyRewards.filter(w => !w.is_active).length === 0 ? (
+                <p>No previous weeks</p>
+              ) : (
+                <div className="admin-list">
+                  {weeklyRewards.filter(w => !w.is_active).map((week) => (
+                    <div key={week.id} className="admin-list-item">
+                      <div>
+                        <strong>{week.item_name}</strong> (Quantity: {week.item_quantity})
+                        <br />
+                        <small>
+                          {new Date(week.week_start).toLocaleDateString()} - {new Date(week.week_end).toLocaleDateString()}
+                        </small>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={() => handleViewWinners(week.id)}
+                          className="btn btn-primary"
+                        >
+                          View Winners
+                        </button>
+                        {selectedWeekWinners.length > 0 && (
+                          <button
+                            onClick={() => handleDownloadWinners(week.id, week.item_name)}
+                            className="btn btn-success"
+                          >
+                            Download CSV
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {selectedWeekWinners.length > 0 && (
+              <section className="admin-section">
+                <h3>Winners List</h3>
+                <div className="admin-list">
+                  {selectedWeekWinners.map((winner) => (
+                    <div key={winner.id} className="admin-list-item">
+                      <div>
+                        <strong>Item #{winner.item_number}</strong>
+                        <br />
+                        <small>{winner.member?.wallet_address || winner.ronin_address}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>

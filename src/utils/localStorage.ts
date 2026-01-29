@@ -400,11 +400,13 @@ export const MemberService = {
     let attempts = 0;
     const maxAttempts = 10;
     
+    const isReferralCodeTaken = (code: string) => members.some(m => m.referral_code === code);
+    
     do {
       referral_code = generateId().substring(0, 8).toUpperCase();
       attempts++;
     } while (
-      members.some(m => m.referral_code === referral_code) && 
+      isReferralCodeTaken(referral_code) && 
       attempts < maxAttempts
     );
     
@@ -450,11 +452,13 @@ export const MemberService = {
     let attempts = 0;
     const maxAttempts = 10;
 
+    const isReferralCodeTaken = (code: string) => members.some(m => m.referral_code === code);
+
     do {
       referral_code = generateId().substring(0, 8).toUpperCase();
       attempts++;
     } while (
-      members.some(m => m.referral_code === referral_code) &&
+      isReferralCodeTaken(referral_code) &&
       attempts < maxAttempts
     );
 

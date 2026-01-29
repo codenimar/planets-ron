@@ -762,7 +762,7 @@ export const WeeklyRewardAPI = {
     const currentWeek = WeeklyRewardService.getActive();
     if (currentWeek) {
       // Generate winners list
-      const winners = WeeklyWinnerService.generateWinnersList(currentWeek.id);
+      WeeklyWinnerService.generateWinnersList(currentWeek.id);
       
       // Deactivate current week
       WeeklyRewardService.update(currentWeek.id, { is_active: false });
