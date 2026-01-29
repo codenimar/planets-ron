@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { XPostAPI, MessageAPI, FeaturedAssetAPI, WeeklyRewardAPI } from '../utils/api';
+import { MemberService } from '../utils/localStorage';
 import XHandleSetup from '../components/XHandleSetup';
 
 interface XPost {
@@ -50,10 +51,48 @@ const Dashboard: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [showXHandleSetup, setShowXHandleSetup] = useState(false);
   const [assetVerifying, setAssetVerifying] = useState<string | null>(null);
+  const [weeklyActiveMembers, setWeeklyActiveMembers] = useState(0);
+  const [memberRanking, setMemberRanking] = useState<number | null>(null);
+
+  // Helper function to get weekly active members
+  const getWeeklyActiveMembers = (): number => {
+    const allMembers = MemberService.getAll();
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const weeklyActiveCount = allMembers.filter(m => {
+      const lastLogin = new Date(m.last_login);
+      return lastLogin >= oneWeekAgo && m.points > 0;
+    }).length;
+    
+    return weeklyActiveCount;
+  };
+
+  // Helper function to calculate member ranking
+  const getMemberRanking = (): number | null => {
+    if (!member) return null;
+    
+    const allMembers = MemberService.getAll();
+    // Sort members by points in descending order
+    const sortedMembers = allMembers
+      .filter(m => m.is_active && m.points > 0)
+      .sort((a, b) => b.points - a.points);
+    
+    // Find the member's position (1-indexed)
+    const rank = sortedMembers.findIndex(m => m.id === member.id);
+    return rank >= 0 ? rank + 1 : null;
+  };
+
+  // Helper function to shorten wallet address
+  const shortenAddress = (address: string): string => {
+    if (!address || address.length < 10) return address;
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
 
   useEffect(() => {
     checkXHandle();
     loadDashboard();
+    calculateStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -61,6 +100,11 @@ const Dashboard: React.FC = () => {
     if (member && !member.x_handle) {
       setShowXHandleSetup(true);
     }
+  };
+
+  const calculateStats = () => {
+    setWeeklyActiveMembers(getWeeklyActiveMembers());
+    setMemberRanking(getMemberRanking());
   };
 
   const loadDashboard = async () => {
@@ -108,6 +152,7 @@ const Dashboard: React.FC = () => {
         setSuccess(response.message || 'Action verified!');
         await refreshMember();
         await loadDashboard();
+        calculateStats(); // Recalculate stats after successful verification
       }
     } catch (err: any) {
       setError(err.message || 'Failed to verify action');
@@ -169,6 +214,30 @@ const Dashboard: React.FC = () => {
             <span className="stat-value">{myActions.length}</span>
             <span className="stat-label">Tasks Completed</span>
           </div>
+          {member?.x_handle && (
+            <div className="stat-card">
+              <span className="stat-value" style={{ fontSize: '1.25rem' }}>@{member.x_handle}</span>
+              <span className="stat-label">X.com Handle</span>
+            </div>
+          )}
+          {member?.wallet_address && (
+            <div className="stat-card">
+              <span className="stat-value" style={{ fontSize: '1.25rem' }}>{shortenAddress(member.wallet_address)}</span>
+              <span className="stat-label">Ronin Address</span>
+            </div>
+          )}
+          {memberRanking !== null && (
+            <div className="stat-card">
+              <span className="stat-value">#{memberRanking}</span>
+              <span className="stat-label">Your Ranking</span>
+            </div>
+          )}
+          {weeklyActiveMembers > 0 && (
+            <div className="stat-card">
+              <span className="stat-value">{weeklyActiveMembers}</span>
+              <span className="stat-label">Weekly Active</span>
+            </div>
+          )}
           {unreadCount > 0 && (
             <div className="stat-card">
               <Link to="/mailbox" style={{ textDecoration: 'none', color: 'inherit' }}>
