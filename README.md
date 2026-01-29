@@ -1,6 +1,6 @@
-# 🎮 RoninAds.com - Advertising Service Platform
+# 🎮 RoninAds.com - Social Engagement and Rewards Platform
 
-A complete React-based advertising service platform with wallet authentication, points system, and publisher features. Built for the Ronin ecosystem with support for multiple wallet types.
+A complete React-based social engagement and rewards platform with wallet authentication, X.com task completion, and weekly prize draws. Built for the Ronin ecosystem with support for multiple wallet types.
 
 **✨ NEW: Fully runs in the browser - No backend server required! All data is stored locally.**
 
@@ -8,14 +8,14 @@ A complete React-based advertising service platform with wallet authentication, 
 
 ### Core Platform Features
 - **Multi-Wallet Authentication**: Ronin Wallet, Ronin Mobile, Waypoint, and Metamask support
-- **Points Earning System**: Members earn points by viewing ads/posts for at least 10 seconds
-- **Click Pass Tiers**: Basic (+10 pts), Silver (+20 pts), Golden (+30 pts) additional points per view
-- **Publisher System**: Create and manage ads/posts with Publisher Pass NFTs
-- **Rewards Marketplace**: Claim NFTs and tokens using earned points
-- **NFT Collection Bonuses**: Additional points for holding specific NFT collections (up to 3 per collection)
-- **24-Hour Cooldown**: Each post can be viewed once per 24 hours per member
-- **Admin Moderation**: New posts require admin approval before going live
-- **Admin Configuration**: Configure NFT collections, rewards, and app settings through a web interface
+- **X.com Social Tasks**: Complete follow, like, and retweet tasks to earn points
+- **Points Earning System**: 1 point per task, 2 points with featured NFT/token bonus
+- **Featured Asset Verification**: Hold featured NFTs or tokens for 2x point multiplier
+- **1-Hour Cooldown**: Verification cooldown to prevent gaming the system
+- **Referral System**: Earn 1 point per referral retweet
+- **Weekly Prize Draws**: Top point earners win weekly rewards
+- **Mailbox System**: Send and receive messages between members
+- **Admin Configuration**: Manage X posts, featured assets, and weekly rewards through web interface
 - **Data Management**: Export/import data as JSON for backup and migration
 
 ### Technical Features
@@ -92,44 +92,40 @@ planets-ron/
 
 ## 🎯 How It Works
 
-### For Members (Viewers)
+### For Members
 
 1. **Connect Wallet**: Log in using Ronin Wallet, Ronin Mobile, Waypoint, or Metamask
-2. **View Posts**: Browse ads/posts/announcements from publishers
-3. **Earn Points**: Stay on a post for 10+ seconds to earn points:
-   - Base: 1 point per view
-   - With Basic Click Pass: +10 points (11 total)
-   - With Silver Click Pass: +20 points (21 total)
-   - With Golden Click Pass: +30 points (31 total)
-   - NFT Collection Bonus: +1 point per NFT (up to 3)
-4. **Claim Rewards**: Use earned points to claim NFTs or tokens
-5. **24-Hour Cooldown**: Each post can only be viewed once per 24 hours
-
-### For Publishers
-
-1. **Get Publisher Pass**: Have an admin assign you a Publisher Pass (Basic, Silver, or Gold)
-2. **Create Posts**: Create up to 3 active posts at a time
-3. **Post Duration**:
-   - Basic Pass: Posts active for 3 days
-   - Silver Pass: Posts active for 10 days
-   - Gold Pass: Posts active for 30 days
-4. **Admin Approval**: New posts and edits require admin approval
-5. **Manage Posts**: Edit or deactivate posts (cannot delete before expiration)
+2. **Add X.com Handle**: Link your X.com account to your profile
+3. **Complete Social Tasks**: Browse X posts and complete tasks:
+   - Follow accounts
+   - Like posts
+   - Retweet posts
+4. **Earn Points**: Receive 1 point per completed task (2 points with featured asset bonus)
+5. **Verify Featured Assets**: Hold featured NFTs or tokens for 2x point multiplier
+6. **Refer Friends**: Earn 1 point when referrals retweet your referral post
+7. **Win Weekly Prizes**: Top point earners win weekly prize draws
+8. **Use Mailbox**: Send and receive messages with other members
 
 ### For Admins
 
 1. **Access Admin Panel**: Navigate to `/admin` after logging in with an admin wallet
-2. **Configure Application**:
-   - Adjust base points per view
-   - Set view duration requirements
-   - Configure cooldown hours
-   - Set max posts per publisher
-3. **Manage NFT Collections**: Add/remove NFT collections that give bonus points
-4. **Manage Rewards**: Add NFT or token rewards that members can claim
-5. **Approve Posts**: Review and approve/reject new posts and edits
-6. **Process Claims**: Mark reward claims as sent or cancelled
-7. **Give Passes**: Assign Click Passes and Publisher Passes to members
-8. **Data Management**: Export/import all data or clear storage
+2. **Manage X Posts**:
+   - Add X.com posts with follow, like, and retweet tasks
+   - Set point values and featured asset bonuses
+   - Activate/deactivate posts
+3. **Manage Featured Assets**:
+   - Add NFT collections or ERC20 tokens as featured assets
+   - Configure 2x point multiplier for holders
+   - Set 1-hour verification cooldown
+4. **Configure Weekly Rewards**:
+   - Set number of winners per week
+   - Configure prize details
+   - Generate and export winner lists as CSV
+5. **Manage Members**:
+   - View all registered members
+   - Check points balances and referral stats
+   - Send mailbox messages
+6. **Data Management**: Export/import all data or clear storage
 
 ## 🔧 Configuration
 
@@ -142,32 +138,40 @@ The first wallet to log in will automatically become an admin. Additional admins
 3. Go to Configuration tab
 4. Add admin wallet addresses as needed
 
-### Application Settings
+### X Posts Management
 
-Configure these settings through the Admin Panel → Configuration tab:
+Add X.com posts for members to complete:
 
-- **Base Points Per View**: Points earned for viewing a post (default: 1)
-- **View Duration Required**: Minimum seconds to view for earning points (default: 10)
-- **Cooldown Hours**: Hours before viewing the same post again (default: 24)
-- **Max Posts Per Publisher**: Maximum active posts per publisher (default: 3)
+1. Go to Admin Panel → X Posts tab
+2. Add post details:
+   - X.com post URL
+   - Task types (follow, like, retweet)
+   - Point value per task (default: 1)
+   - Optional featured asset bonus (2x multiplier)
+3. Activate/deactivate posts as needed
 
-### NFT Collections
+### Featured Assets (NFT/Token Verification)
 
-Add NFT collections that give bonus points to holders:
+Add NFT collections or ERC20 tokens that provide bonus points:
 
-1. Go to Admin Panel → Configuration tab
-2. Scroll to NFT Collections section
-3. Add collection name and contract address
-4. Members holding NFTs from these collections get +1 point per NFT (max 3)
+1. Go to Admin Panel → Featured Assets tab
+2. Add asset details:
+   - Asset type (NFT Collection or ERC20 Token)
+   - Contract address on Ronin network
+   - Asset name and description
+3. Members holding these assets get 2x points on tasks
+4. 1-hour cooldown between verifications to prevent abuse
 
-### Rewards
+### Weekly Rewards
 
-Create rewards that members can claim with their points:
+Configure weekly prize draws:
 
-1. Go to Admin Panel → Configuration tab
-2. Scroll to Rewards section
-3. Add reward details (name, description, type, cost, quantity)
-4. Members can claim these rewards from the Rewards page
+1. Go to Admin Panel → Weekly Rewards tab
+2. Set number of winners per week
+3. Configure prize details (description, value)
+4. View current week's leaderboard
+5. Generate winner list at end of week
+6. Export winners as CSV for distribution
 
 ## 🛠️ Available Scripts
 
@@ -206,6 +210,45 @@ Optimized for:
 - **Tablet**: 768px - 1024px
 - **Desktop**: > 1024px
 - **Large Desktop**: > 1400px
+
+## 🎁 NFT/Token Verification
+
+### How Featured Assets Work
+
+Featured assets are NFTs or tokens that provide a 2x point multiplier for social tasks:
+
+1. **Verification**: Members can verify ownership of featured NFTs/tokens through their connected wallet
+2. **Bonus Points**: After successful verification, members earn 2 points per task instead of 1
+3. **Cooldown Period**: 1-hour cooldown between verifications prevents gaming the system
+4. **Multiple Assets**: Members can hold multiple featured assets, but only need one for the 2x multiplier
+
+### Supported Asset Types
+
+- **NFT Collections (ERC721)**: Verify ownership of any NFT in the collection
+- **ERC20 Tokens**: Verify holding of specified token amount
+
+## 🏆 Weekly Rewards
+
+### How Prize Draws Work
+
+1. **Earning Points**: Members earn points by completing X.com social tasks throughout the week
+2. **Leaderboard**: Rankings are based on total points earned during the current week
+3. **Winner Selection**: Top point earners are selected as winners at the end of each week
+4. **Prize Distribution**: Admins export winner list as CSV for prize distribution
+5. **New Week**: Points reset and a new competition begins
+
+### For Members
+
+- Check your ranking on the leaderboard
+- Complete more tasks to increase your chances of winning
+- Featured asset bonuses count toward your weekly total
+
+### For Admins
+
+- Configure number of winners and prize details
+- Monitor leaderboard throughout the week
+- Generate winner list at week's end
+- Export winners as CSV with wallet addresses
 
 ## 🌐 Wallet Support
 
@@ -275,11 +318,11 @@ location / {
 
 Use the Admin Panel → Data Management tab to export all data as a JSON file. This includes:
 - Members
-- Posts
-- Post views
-- Reward claims
-- Click passes
-- Publisher passes
+- X Posts
+- Social task completions
+- Featured assets
+- Weekly rewards
+- Mailbox messages
 - Points history
 - Configuration
 

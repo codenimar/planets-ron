@@ -4,8 +4,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
-import PostsPage from './pages/PostsPage';
-import RewardsPage from './pages/RewardsPage';
 import ReferralPage from './pages/ReferralPage';
 import MailboxPage from './pages/MailboxPage';
 import TermsPage from './pages/TermsPage';
@@ -52,22 +50,6 @@ function AppContent() {
             element={
               <PrivateRoute>
                 <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/posts"
-            element={
-              <PrivateRoute>
-                <PostsPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/rewards"
-            element={
-              <PrivateRoute>
-                <RewardsPage />
               </PrivateRoute>
             }
           />

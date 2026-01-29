@@ -10,6 +10,12 @@ import {
   ConfigService,
   MessageService,
   RewardDistributionService,
+  XPostService,
+  XPostActionService,
+  FeaturedAssetService,
+  MemberAssetVerificationService,
+  WeeklyRewardService,
+  WeeklyWinnerService,
   initializeStorage,
   Member,
   Post,
@@ -156,6 +162,20 @@ export const MemberAPI = {
       click_pass: clickPass,
       publisher_pass: publisherPass,
     };
+  },
+
+  async updateXHandle(xHandle: string) {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    // Validate X handle format (optional @ prefix, alphanumeric and underscore)
+    const cleanHandle = xHandle.replace('@', '');
+    if (!/^[a-zA-Z0-9_]{1,15}$/.test(cleanHandle)) {
+      throw new Error('Invalid X.com handle format');
+    }
+
+    const updatedMember = MemberService.update(member.id, { x_handle: cleanHandle });
+    return { success: true, member: updatedMember };
   },
 };
 
@@ -546,6 +566,236 @@ export const ReferralAPI = {
       referral_code: updatedMember.referral_code,
       member: updatedMember,
     };
+  },
+};
+
+// X Post API
+export const XPostAPI = {
+  async getAll() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const posts = XPostService.getActive();
+    return { success: true, posts };
+  },
+
+  async create(postUrl: string, imageUrl: string) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const post = XPostService.create(postUrl, imageUrl, member.id);
+    return { success: true, post };
+  },
+
+  async update(postId: string, updates: { post_url?: string; image_url?: string; is_active?: boolean }) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const post = XPostService.update(postId, updates);
+    return { success: true, post };
+  },
+
+  async delete(postId: string) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    XPostService.delete(postId);
+    return { success: true };
+  },
+
+  async verifyAction(postId: string, actionType: 'follow' | 'like' | 'retweet') {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    // Check if action already exists
+    const existingAction = XPostActionService.getByMemberAndPost(member.id, postId, actionType);
+    if (existingAction) {
+      throw new Error(`You have already completed this action`);
+    }
+
+    // Calculate points: 1 base point + bonus if holding featured assets
+    let points = 1;
+    const hasAssetBonus = MemberAssetVerificationService.hasActiveVerification(member.id);
+    if (hasAssetBonus) {
+      points = 2; // 1 base + 1 bonus
+    }
+
+    // Create action
+    const action = XPostActionService.create(postId, member.id, actionType, points);
+
+    // Add points to member
+    MemberService.addPoints(member.id, points, `${actionType} action on X post`, postId);
+
+    // If member was referred, give referrer 1 point for retweet
+    if (actionType === 'retweet' && member.referred_by) {
+      MemberService.addPoints(member.referred_by, 1, 'Referral retweet bonus', member.id);
+    }
+
+    return {
+      success: true,
+      action,
+      points_earned: points,
+      message: `Earned ${points} points for ${actionType}!`,
+    };
+  },
+
+  async getMyActions() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const actions = XPostActionService.getByMember(member.id);
+    return { success: true, actions };
+  },
+};
+
+// Featured Asset API
+export const FeaturedAssetAPI = {
+  async getAll() {
+    const assets = FeaturedAssetService.getActive();
+    return { success: true, assets };
+  },
+
+  async create(
+    assetType: 'nft_collection' | 'token',
+    name: string,
+    contractAddress: string,
+    requiredAmount: number,
+    bonusMultiplier: number
+  ) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const asset = FeaturedAssetService.create(assetType, name, contractAddress, requiredAmount, bonusMultiplier);
+    return { success: true, asset };
+  },
+
+  async update(assetId: string, updates: Partial<any>) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const asset = FeaturedAssetService.update(assetId, updates);
+    return { success: true, asset };
+  },
+
+  async delete(assetId: string) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    FeaturedAssetService.delete(assetId);
+    return { success: true };
+  },
+
+  async verifyAsset(assetId: string) {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    // Check cooldown
+    if (!MemberAssetVerificationService.canVerify(member.id, assetId)) {
+      throw new Error('Verification on cooldown. Please wait 1 hour between verifications.');
+    }
+
+    const asset = FeaturedAssetService.getById(assetId);
+    if (!asset) throw new Error('Asset not found');
+
+    // In a real implementation, this would call Ronin RPC
+    // For now, we'll simulate verification
+    // TODO: Implement actual Ronin RPC calls
+    const verified = await checkRoninAsset(member.wallet_address, asset);
+
+    // Update or create verification
+    MemberAssetVerificationService.update(member.id, assetId, verified);
+
+    return {
+      success: true,
+      verified,
+      message: verified
+        ? `Asset verified! You'll earn bonus points on actions.`
+        : `Asset verification failed. Make sure you hold the required amount.`,
+    };
+  },
+
+  async getMyVerifications() {
+    const member = getCurrentMember();
+    if (!member) throw new Error('Not authenticated');
+
+    const verifications = MemberAssetVerificationService.getByMember(member.id);
+    return { success: true, verifications };
+  },
+};
+
+// Placeholder for Ronin RPC integration
+async function checkRoninAsset(walletAddress: string, asset: any): Promise<boolean> {
+  // TODO: Implement actual Ronin RPC calls
+  // For now, return true for demonstration
+  console.log(`Checking Ronin asset for ${walletAddress}:`, asset);
+  return true;
+}
+
+// Weekly Reward API
+export const WeeklyRewardAPI = {
+  async getCurrent() {
+    const currentWeek = WeeklyRewardService.getActive();
+    return { success: true, weekly_reward: currentWeek };
+  },
+
+  async create(weekStart: string, weekEnd: string, itemName: string, itemQuantity: number) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const weeklyReward = WeeklyRewardService.create(weekStart, weekEnd, itemName, itemQuantity);
+    return { success: true, weekly_reward: weeklyReward };
+  },
+
+  async update(weeklyRewardId: string, updates: Partial<any>) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const weeklyReward = WeeklyRewardService.update(weeklyRewardId, updates);
+    return { success: true, weekly_reward: weeklyReward };
+  },
+
+  async restartWeek(itemName: string, itemQuantity: number) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    // Get current week to generate winners before deactivating
+    const currentWeek = WeeklyRewardService.getActive();
+    if (currentWeek) {
+      // Generate winners list
+      WeeklyWinnerService.generateWinnersList(currentWeek.id);
+      
+      // Deactivate current week
+      WeeklyRewardService.update(currentWeek.id, { is_active: false });
+    }
+
+    // Create new week
+    const now = new Date();
+    const weekStart = now.toISOString();
+    const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const newWeek = WeeklyRewardService.create(weekStart, weekEnd, itemName, itemQuantity);
+
+    return { success: true, weekly_reward: newWeek, message: 'Week restarted successfully' };
+  },
+
+  async getWinners(weeklyRewardId: string) {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const winners = WeeklyWinnerService.getByWeeklyReward(weeklyRewardId);
+    const winnersWithDetails = winners.map(w => ({
+      ...w,
+      member: MemberService.getById(w.member_id),
+    }));
+
+    return { success: true, winners: winnersWithDetails };
+  },
+
+  async getAllWeeks() {
+    const member = getCurrentMember();
+    if (!member?.is_admin) throw new Error('Admin access required');
+
+    const weeks = WeeklyRewardService.getAll();
+    return { success: true, weekly_rewards: weeks };
   },
 };
 

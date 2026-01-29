@@ -42,9 +42,13 @@
 # Prevent directory listing
 Options -Indexes
 
-# Enable PHP session settings
-<IfModule mod_php.c>
-    php_flag session.cookie_httponly On
-    php_flag session.use_strict_mode On
-    php_flag session.use_only_cookies On
+# React Router - Redirect all requests to index.html
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /index.html [L]
 </IfModule>
