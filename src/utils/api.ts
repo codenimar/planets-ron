@@ -607,10 +607,72 @@ export const XPostAPI = {
     const member = getCurrentMember();
     if (!member) throw new Error('Not authenticated');
 
+    // Check if X handle is set
+    if (!member.x_handle) {
+      throw new Error('Please set your X.com handle first');
+    }
+
     // Check if action already exists
     const existingAction = XPostActionService.getByMemberAndPost(member.id, postId, actionType);
     if (existingAction) {
       throw new Error(`You have already completed this action`);
+    }
+
+    // Get the X post to verify against
+    const xPost = XPostService.getById(postId);
+    if (!xPost) {
+      throw new Error('Post not found');
+    }
+
+    // Call backend API to verify the action on X.com
+    let verified = false;
+    try {
+      const endpoint = `/api/verify-${actionType}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          xHandle: member.x_handle,
+          postUrl: xPost.post_url,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Check if this is an API configuration error (backwards compatibility)
+        if (data.error && data.error.includes('Bearer Token not configured')) {
+          console.warn('X API not configured, allowing action without verification');
+          verified = true;
+        } else {
+          // This is a real verification failure - user hasn't completed the action
+          throw new Error(data.error || `Verification failed. Please complete the ${actionType} action on X.com first, then try again.`);
+        }
+      } else {
+        verified = data.verified;
+        
+        if (!verified) {
+          // User hasn't actually completed the action on X.com
+          throw new Error(`Please complete the ${actionType} action on X.com first, then try again. Make sure you're logged into X.com with the account @${member.x_handle}.`);
+        }
+      }
+    } catch (error: any) {
+      // Handle network errors differently from verification errors
+      if (error.message.includes('Please complete') || error.message.includes('Please set')) {
+        // This is a user-facing error - re-throw it
+        throw error;
+      }
+      
+      // Network error or API unavailable - check if it's a fetch error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Network error or API unavailable, allowing action without verification:', error);
+        verified = true;
+      } else {
+        // Unknown error - be safe and reject
+        throw new Error(`Verification error: ${error.message}. Please try again later.`);
+      }
     }
 
     // Calculate points: 1 base point + bonus if holding featured assets
@@ -636,6 +698,7 @@ export const XPostAPI = {
       action,
       points_earned: points,
       message: `Earned ${points} points for ${actionType}!`,
+      verified,
     };
   },
 
