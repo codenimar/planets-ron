@@ -4,7 +4,7 @@
 // Body: { xHandle: string, postUrl: string }
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getUserIdFromUsername, extractTwitterUserId, extractTweetId, checkFollowing } from './x-api-helper';
+import { getUserIdFromUsername, extractUsernameFromUrl, checkFollowing } from './x-api-helper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests
@@ -27,11 +27,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userId = await getUserIdFromUsername(xHandle);
 
     // Extract the target username from the post URL
-    const targetUsername = extractTwitterUserId(postUrl);
+    // This is the account that posted the tweet, which should be followed
+    const targetUsername = extractUsernameFromUrl(postUrl);
     if (!targetUsername) {
       return res.status(400).json({ 
         success: false,
-        error: 'Could not extract username from post URL' 
+        error: 'Could not extract username from post URL. Please ensure the URL is a valid X.com post URL.' 
       });
     }
 
@@ -46,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       verified: isFollowing,
       message: isFollowing 
         ? 'Follow action verified successfully' 
-        : 'User is not following the target account',
+        : `User @${xHandle} is not following @${targetUsername}. Please follow the account on X.com first.`,
     });
   } catch (error: any) {
     console.error('Error verifying follow:', error);

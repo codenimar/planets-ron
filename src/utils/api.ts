@@ -642,26 +642,37 @@ export const XPostAPI = {
       const data = await response.json();
       
       if (!response.ok) {
-        // If API verification fails, throw error with the message
-        throw new Error(data.error || 'Verification failed');
-      }
-
-      verified = data.verified;
-      
-      if (!verified) {
-        // User hasn't actually completed the action on X.com
-        throw new Error(`Please complete the ${actionType} action on X.com first, then try again.`);
+        // Check if this is an API configuration error (backwards compatibility)
+        if (data.error && data.error.includes('Bearer Token not configured')) {
+          console.warn('X API not configured, allowing action without verification');
+          verified = true;
+        } else {
+          // This is a real verification failure - user hasn't completed the action
+          throw new Error(data.error || `Verification failed. Please complete the ${actionType} action on X.com first, then try again.`);
+        }
+      } else {
+        verified = data.verified;
+        
+        if (!verified) {
+          // User hasn't actually completed the action on X.com
+          throw new Error(`Please complete the ${actionType} action on X.com first, then try again. Make sure you're logged into X.com with the account @${member.x_handle}.`);
+        }
       }
     } catch (error: any) {
-      // If API is not available or fails, log error but continue (backwards compatibility)
-      console.warn('X API verification failed:', error);
-      // Re-throw if it's a user-facing error
+      // Handle network errors differently from verification errors
       if (error.message.includes('Please complete') || error.message.includes('Please set')) {
+        // This is a user-facing error - re-throw it
         throw error;
       }
-      // For other errors (API down, network issues), allow the action to proceed
-      // This maintains backwards compatibility and prevents blocking users
-      verified = true;
+      
+      // Network error or API unavailable - check if it's a fetch error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Network error or API unavailable, allowing action without verification:', error);
+        verified = true;
+      } else {
+        // Unknown error - be safe and reject
+        throw new Error(`Verification error: ${error.message}. Please try again later.`);
+      }
     }
 
     // Calculate points: 1 base point + bonus if holding featured assets

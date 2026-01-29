@@ -20,6 +20,11 @@ export async function makeXAPIRequest(endpoint: string): Promise<any> {
     throw new Error('X API Bearer Token not configured');
   }
 
+  // Validate token format - should not be the placeholder value
+  if (X_API_BEARER_TOKEN === 'your_bearer_token_here' || X_API_BEARER_TOKEN.length < 20) {
+    throw new Error('X API Bearer Token not configured properly. Please set a valid token.');
+  }
+
   const url = `${X_API_BASE_URL}${endpoint}`;
   
   const response = await fetch(url, {
@@ -31,22 +36,35 @@ export async function makeXAPIRequest(endpoint: string): Promise<any> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(`X API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: errorText };
+    }
+    throw new Error(`X API Error (${response.status}): ${errorData.message || errorData.detail || JSON.stringify(errorData)}`);
   }
 
   return await response.json();
 }
 
 /**
- * Extract the X user ID from a profile URL or username
- * For a full implementation, you'd need to call the X API to get user ID from username
+ * Extract the username from a post URL
+ * Note: This extracts the username from the URL path, which is the account that posted the tweet
  */
-export function extractTwitterUserId(postUrl: string): string | null {
+export function extractUsernameFromUrl(postUrl: string): string | null {
   // Extract username from URL like https://x.com/username/status/123456
-  const match = postUrl.match(/(?:twitter\.com|x\.com)\/([^\/]+)/);
+  // Exclude known X.com system paths
+  const excludedPaths = ['i', 'home', 'search', 'explore', 'notifications', 'messages', 'settings'];
+  const match = postUrl.match(/(?:twitter\.com|x\.com)\/([a-zA-Z0-9_]{1,15})(?:\/|$)/);
+  
   if (match) {
-    return match[1]; // Returns username (would need to be converted to ID via API)
+    const username = match[1];
+    // Filter out excluded system paths
+    if (!excludedPaths.includes(username.toLowerCase())) {
+      return username;
+    }
   }
   return null;
 }

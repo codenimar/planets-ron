@@ -104,6 +104,16 @@ To test the integration:
    - Wait a few seconds and try again
    - Check that you're logged into X.com with the correct account
 
+5. **Follow Verification Fails for Users Following 1000+ Accounts**
+   - The current implementation checks the first 1000 followed accounts
+   - If the target account is not in the first 1000, verification will fail
+   - Consider implementing pagination in the checkFollowing function
+
+6. **Like/Retweet Verification Fails for Old Tweets**
+   - The current implementation checks recent likes (100 most recent) and retweets
+   - If the tweet is not in the recent results, verification will fail
+   - Consider implementing pagination or increasing the result limit
+
 ## Backwards Compatibility
 
 The system is designed to be backwards compatible:

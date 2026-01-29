@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!tweetId) {
       return res.status(400).json({ 
         success: false,
-        error: 'Could not extract tweet ID from post URL' 
+        error: 'Could not extract tweet ID from post URL. Please ensure the URL is a valid X.com post URL.' 
       });
     }
 
@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       verified: isLiked,
       message: isLiked 
         ? 'Like action verified successfully' 
-        : 'User has not liked the tweet',
+        : `User @${xHandle} has not liked this tweet. Please like the post on X.com first.`,
     });
   } catch (error: any) {
     console.error('Error verifying like:', error);
