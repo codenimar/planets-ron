@@ -639,23 +639,32 @@ export const XPostAPI = {
         }),
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Check if this is an API configuration error (backwards compatibility)
-        if (data.error && data.error.includes('Bearer Token not configured')) {
-          console.warn('X API not configured, allowing action without verification');
-          verified = true;
-        } else {
-          // This is a real verification failure - user hasn't completed the action
-          throw new Error(data.error || `Verification failed. Please complete the ${actionType} action on X.com first, then try again.`);
-        }
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('API endpoint returned non-JSON response. The verification API may not be deployed correctly.');
+        console.warn(`Response status: ${response.status}, Content-Type: ${contentType}`);
+        // For backwards compatibility, allow the action when API is not available
+        verified = true;
       } else {
-        verified = data.verified;
+        const data = await response.json();
         
-        if (!verified) {
-          // User hasn't actually completed the action on X.com
-          throw new Error(`Please complete the ${actionType} action on X.com first, then try again. Make sure you're logged into X.com with the account @${member.x_handle}.`);
+        if (!response.ok) {
+          // Check if this is an API configuration error (backwards compatibility)
+          if (data.error && data.error.includes('Bearer Token not configured')) {
+            console.warn('X API not configured, allowing action without verification');
+            verified = true;
+          } else {
+            // This is a real verification failure - user hasn't completed the action
+            throw new Error(data.error || `Verification failed. Please complete the ${actionType} action on X.com first, then try again.`);
+          }
+        } else {
+          verified = data.verified;
+          
+          if (!verified) {
+            // User hasn't actually completed the action on X.com
+            throw new Error(`Please complete the ${actionType} action on X.com first, then try again. Make sure you're logged into X.com with the account @${member.x_handle}.`);
+          }
         }
       }
     } catch (error: any) {
