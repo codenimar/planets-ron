@@ -2,13 +2,14 @@
 
 A complete React-based social engagement and rewards platform with wallet authentication, X.com task completion, and weekly prize draws. Built for the Ronin ecosystem with support for multiple wallet types.
 
-**✨ NEW: Fully runs in the browser - No backend server required! All data is stored locally.**
+**✨ NEW: X.com API Integration - Actions are now verified using the X.com API!**
 
 ## 🌟 Features
 
 ### Core Platform Features
 - **Multi-Wallet Authentication**: Ronin Wallet, Ronin Mobile, Waypoint, and Metamask support
 - **X.com Social Tasks**: Complete follow, like, and retweet tasks to earn points
+- **X.com API Verification**: Actions are verified using X.com API v2 endpoints to ensure users actually complete tasks
 - **Points Earning System**: 1 point per task, 2 points with featured NFT/token bonus
 - **Featured Asset Verification**: Hold featured NFTs or tokens for 2x point multiplier
 - **1-Hour Cooldown**: Verification cooldown to prevent gaming the system
@@ -21,8 +22,9 @@ A complete React-based social engagement and rewards platform with wallet authen
 ### Technical Features
 - **React 19 + TypeScript**: Modern React with full type safety
 - **React Router**: Client-side routing with protected routes
-- **Local Storage**: All data persists in the browser using localStorage
-- **No Backend Required**: Fully runs in the browser - no PHP, no MySQL, no server needed
+- **Vercel Serverless Functions**: Backend API for X.com verification
+- **X.com API v2 Integration**: Verifies follow, like, and retweet actions
+- **Local Storage**: User data persists in the browser using localStorage
 - **Session Management**: Secure authentication with session tokens
 - **Responsive Design**: Mobile-first design that works on all devices
 - **Modern UI**: Purple/blue gradient theme with glassmorphism effects
@@ -53,7 +55,12 @@ npm install
 npm start
 ```
 
-4. **Open the application:**
+4. **(Optional) Set up X.com API for verification:**
+   - See [X_API_SETUP.md](./X_API_SETUP.md) for detailed instructions
+   - Create a `.env` file with your X API Bearer Token
+   - This enables real-time verification of follow/like/retweet actions
+
+5. **Open the application:**
    - Application: [http://localhost:3000](http://localhost:3000)
    - Login with your wallet
    - First wallet to login will be automatically set as admin
@@ -62,6 +69,11 @@ npm start
 
 ```
 planets-ron/
+├── api/                          # Vercel serverless functions
+│   ├── x-api-helper.ts           # X.com API utilities
+│   ├── verify-follow.ts          # Follow verification endpoint
+│   ├── verify-like.ts            # Like verification endpoint
+│   └── verify-retweet.ts         # Retweet verification endpoint
 ├── public/
 │   ├── index.html                # React app entry point
 │   └── ...                       # Static assets
@@ -80,12 +92,13 @@ planets-ron/
 │   │   ├── TermsPage.tsx         # Terms of Service
 │   │   └── PrivacyPage.tsx       # Privacy Policy
 │   ├── utils/
-│   │   ├── api.ts                # API layer (uses localStorage)
+│   │   ├── api.ts                # API layer (uses localStorage + X API)
 │   │   ├── localStorage.ts       # Local storage service
 │   │   └── wallet.ts             # Wallet utilities
 │   ├── App.tsx                   # Main App component
 │   ├── App.css                   # Global styles
 │   └── index.tsx                 # React entry point
+├── X_API_SETUP.md                # X.com API setup guide
 ├── package.json                  # Dependencies
 └── README.md                     # This file
 ```
@@ -95,16 +108,18 @@ planets-ron/
 ### For Members
 
 1. **Connect Wallet**: Log in using Ronin Wallet, Ronin Mobile, Waypoint, or Metamask
-2. **Add X.com Handle**: Link your X.com account to your profile
+2. **Add X.com Handle**: Link your X.com account to your profile (required for verification)
 3. **Complete Social Tasks**: Browse X posts and complete tasks:
-   - Follow accounts
-   - Like posts
-   - Retweet posts
-4. **Earn Points**: Receive 1 point per completed task (2 points with featured asset bonus)
-5. **Verify Featured Assets**: Hold featured NFTs or tokens for 2x point multiplier
-6. **Refer Friends**: Earn 1 point when referrals retweet your referral post
-7. **Win Weekly Prizes**: Top point earners win weekly prize draws
-8. **Use Mailbox**: Send and receive messages with other members
+   - Visit X.com post link
+   - Follow the account on X.com
+   - Like the post on X.com
+   - Retweet the post on X.com
+4. **Verify Actions**: Click verify buttons to confirm completion via X.com API
+5. **Earn Points**: Receive 1 point per verified task (2 points with featured asset bonus)
+6. **Verify Featured Assets**: Hold featured NFTs or tokens for 2x point multiplier
+7. **Refer Friends**: Earn 1 point when referrals retweet your referral post
+8. **Win Weekly Prizes**: Top point earners win weekly prize draws
+9. **Use Mailbox**: Send and receive messages with other members
 
 ### For Admins
 
