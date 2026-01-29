@@ -153,8 +153,12 @@ const Dashboard: React.FC = () => {
         await refreshMember();
         await loadDashboard();
         calculateStats(); // Recalculate stats after successful verification
+      } else {
+        // This shouldn't happen based on API implementation, but handle it just in case
+        setError(response.message || 'Verification failed');
       }
     } catch (err: any) {
+      console.error('Verification error:', err);
       setError(err.message || 'Failed to verify action');
     } finally {
       setActionLoading(null);
