@@ -72,6 +72,11 @@ const Dashboard: React.FC = () => {
   const getMemberRanking = (): number | null => {
     if (!member) return null;
     
+    // Check if current member qualifies for ranking
+    if (!member.is_active || member.points <= 0) {
+      return null;
+    }
+    
     const allMembers = MemberService.getAll();
     // Sort members by points in descending order
     const sortedMembers = allMembers
@@ -92,9 +97,16 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     checkXHandle();
     loadDashboard();
-    calculateStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Recalculate stats when member changes
+    if (member) {
+      calculateStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member]);
 
   const checkXHandle = () => {
     if (member && !member.x_handle) {
@@ -175,9 +187,15 @@ const Dashboard: React.FC = () => {
 
       if (response.success) {
         setSuccess(response.message || 'Asset verified!');
+        await refreshMember();
         await loadDashboard();
+        calculateStats(); // Recalculate stats after successful verification
+      } else {
+        // Handle non-success responses
+        setError(response.message || 'Asset verification failed');
       }
     } catch (err: any) {
+      console.error('Asset verification error:', err);
       setError(err.message || 'Failed to verify asset');
     } finally {
       setAssetVerifying(null);
@@ -236,12 +254,10 @@ const Dashboard: React.FC = () => {
               <span className="stat-label">Your Ranking</span>
             </div>
           )}
-          {weeklyActiveMembers > 0 && (
-            <div className="stat-card">
-              <span className="stat-value">{weeklyActiveMembers}</span>
-              <span className="stat-label">Weekly Active</span>
-            </div>
-          )}
+          <div className="stat-card">
+            <span className="stat-value">{weeklyActiveMembers}</span>
+            <span className="stat-label">Weekly Active</span>
+          </div>
           {unreadCount > 0 && (
             <div className="stat-card">
               <Link to="/mailbox" style={{ textDecoration: 'none', color: 'inherit' }}>
