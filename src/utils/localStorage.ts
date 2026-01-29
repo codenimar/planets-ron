@@ -6,6 +6,7 @@ export interface Member {
   id: string;
   wallet_address: string;
   wallet_type: string;
+  x_handle?: string;  // X.com handle
   points: number;
   created_at: string;
   last_login: string;
@@ -134,6 +135,68 @@ export interface RewardDistribution {
   notes: string;
 }
 
+// New models for X.com post interaction system
+export interface XPost {
+  id: string;
+  post_url: string;
+  image_url: string;  // Screenshot or uploaded image
+  created_by: string;  // admin who created it
+  created_at: string;
+  is_active: boolean;
+}
+
+export interface XPostAction {
+  id: string;
+  post_id: string;
+  member_id: string;
+  action_type: 'follow' | 'like' | 'retweet';
+  verified: boolean;
+  verified_at: string | null;
+  points_earned: number;
+  created_at: string;
+}
+
+// Featured assets for bonus points
+export interface FeaturedAsset {
+  id: string;
+  asset_type: 'nft_collection' | 'token';
+  name: string;
+  contract_address: string;
+  required_amount: number;  // 1 for NFT, 100000 for token
+  bonus_multiplier: number;  // e.g., 2 for 2x points (1 extra point per action)
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MemberAssetVerification {
+  id: string;
+  member_id: string;
+  asset_id: string;
+  verified: boolean;
+  last_checked: string;
+  cooldown_until: string;  // 1 hour cooldown
+}
+
+// Weekly rewards system
+export interface WeeklyReward {
+  id: string;
+  week_start: string;
+  week_end: string;
+  item_name: string;
+  item_quantity: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface WeeklyWinner {
+  id: string;
+  weekly_reward_id: string;
+  member_id: string;
+  ronin_address: string;
+  item_number: number;
+  created_at: string;
+}
+
 export interface AppConfig {
   nft_collections: NFTCollection[];
   rewards: Reward[];
@@ -162,6 +225,12 @@ const STORAGE_KEYS = {
   CONFIG: 'roninads_config',
   MESSAGES: 'roninads_messages',
   REWARD_DISTRIBUTIONS: 'roninads_reward_distributions',
+  X_POSTS: 'roninads_x_posts',
+  X_POST_ACTIONS: 'roninads_x_post_actions',
+  FEATURED_ASSETS: 'roninads_featured_assets',
+  MEMBER_ASSET_VERIFICATIONS: 'roninads_member_asset_verifications',
+  WEEKLY_REWARDS: 'roninads_weekly_rewards',
+  WEEKLY_WINNERS: 'roninads_weekly_winners',
 };
 
 // Utility function to generate unique IDs
@@ -285,6 +354,24 @@ export function initializeStorage(): void {
   }
   if (!localStorage.getItem(STORAGE_KEYS.REWARD_DISTRIBUTIONS)) {
     saveToStorage(STORAGE_KEYS.REWARD_DISTRIBUTIONS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.X_POSTS)) {
+    saveToStorage(STORAGE_KEYS.X_POSTS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.X_POST_ACTIONS)) {
+    saveToStorage(STORAGE_KEYS.X_POST_ACTIONS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.FEATURED_ASSETS)) {
+    saveToStorage(STORAGE_KEYS.FEATURED_ASSETS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.MEMBER_ASSET_VERIFICATIONS)) {
+    saveToStorage(STORAGE_KEYS.MEMBER_ASSET_VERIFICATIONS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WEEKLY_REWARDS)) {
+    saveToStorage(STORAGE_KEYS.WEEKLY_REWARDS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WEEKLY_WINNERS)) {
+    saveToStorage(STORAGE_KEYS.WEEKLY_WINNERS, []);
   }
 }
 
@@ -881,5 +968,344 @@ export const RewardDistributionService = {
     distributions.push(newDistribution);
     saveToStorage(STORAGE_KEYS.REWARD_DISTRIBUTIONS, distributions);
     return newDistribution;
+  },
+};
+
+// X Post operations
+export const XPostService = {
+  getAll(): XPost[] {
+    return getFromStorage<XPost[]>(STORAGE_KEYS.X_POSTS, []);
+  },
+
+  getActive(): XPost[] {
+    return this.getAll().filter(p => p.is_active);
+  },
+
+  getById(id: string): XPost | null {
+    const posts = this.getAll();
+    return posts.find(p => p.id === id) || null;
+  },
+
+  create(postUrl: string, imageUrl: string, createdBy: string): XPost {
+    const posts = this.getAll();
+
+    const newPost: XPost = {
+      id: generateId(),
+      post_url: postUrl,
+      image_url: imageUrl,
+      created_by: createdBy,
+      created_at: new Date().toISOString(),
+      is_active: true,
+    };
+
+    posts.push(newPost);
+    saveToStorage(STORAGE_KEYS.X_POSTS, posts);
+    return newPost;
+  },
+
+  update(id: string, updates: Partial<XPost>): XPost | null {
+    const posts = this.getAll();
+    const index = posts.findIndex(p => p.id === id);
+    
+    if (index === -1) return null;
+
+    posts[index] = { ...posts[index], ...updates };
+    saveToStorage(STORAGE_KEYS.X_POSTS, posts);
+    return posts[index];
+  },
+
+  delete(id: string): void {
+    const posts = this.getAll();
+    const filtered = posts.filter(p => p.id !== id);
+    saveToStorage(STORAGE_KEYS.X_POSTS, filtered);
+  },
+};
+
+// X Post Action operations
+export const XPostActionService = {
+  getAll(): XPostAction[] {
+    return getFromStorage<XPostAction[]>(STORAGE_KEYS.X_POST_ACTIONS, []);
+  },
+
+  getByMember(memberId: string): XPostAction[] {
+    return this.getAll().filter(a => a.member_id === memberId);
+  },
+
+  getByPost(postId: string): XPostAction[] {
+    return this.getAll().filter(a => a.post_id === postId);
+  },
+
+  getByMemberAndPost(memberId: string, postId: string, actionType: 'follow' | 'like' | 'retweet'): XPostAction | null {
+    const actions = this.getAll();
+    return actions.find(a => 
+      a.member_id === memberId && 
+      a.post_id === postId && 
+      a.action_type === actionType
+    ) || null;
+  },
+
+  create(postId: string, memberId: string, actionType: 'follow' | 'like' | 'retweet', pointsEarned: number): XPostAction {
+    const actions = this.getAll();
+
+    const newAction: XPostAction = {
+      id: generateId(),
+      post_id: postId,
+      member_id: memberId,
+      action_type: actionType,
+      verified: true,  // Auto-verified on creation
+      verified_at: new Date().toISOString(),
+      points_earned: pointsEarned,
+      created_at: new Date().toISOString(),
+    };
+
+    actions.push(newAction);
+    saveToStorage(STORAGE_KEYS.X_POST_ACTIONS, actions);
+    return newAction;
+  },
+};
+
+// Featured Asset operations
+export const FeaturedAssetService = {
+  getAll(): FeaturedAsset[] {
+    return getFromStorage<FeaturedAsset[]>(STORAGE_KEYS.FEATURED_ASSETS, []);
+  },
+
+  getActive(): FeaturedAsset[] {
+    return this.getAll().filter(a => a.is_active);
+  },
+
+  getById(id: string): FeaturedAsset | null {
+    const assets = this.getAll();
+    return assets.find(a => a.id === id) || null;
+  },
+
+  create(
+    assetType: 'nft_collection' | 'token',
+    name: string,
+    contractAddress: string,
+    requiredAmount: number,
+    bonusMultiplier: number
+  ): FeaturedAsset {
+    const assets = this.getAll();
+
+    const newAsset: FeaturedAsset = {
+      id: generateId(),
+      asset_type: assetType,
+      name,
+      contract_address: contractAddress.toLowerCase(),
+      required_amount: requiredAmount,
+      bonus_multiplier: bonusMultiplier,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    };
+
+    assets.push(newAsset);
+    saveToStorage(STORAGE_KEYS.FEATURED_ASSETS, assets);
+    return newAsset;
+  },
+
+  update(id: string, updates: Partial<FeaturedAsset>): FeaturedAsset | null {
+    const assets = this.getAll();
+    const index = assets.findIndex(a => a.id === id);
+    
+    if (index === -1) return null;
+
+    assets[index] = { ...assets[index], ...updates };
+    saveToStorage(STORAGE_KEYS.FEATURED_ASSETS, assets);
+    return assets[index];
+  },
+
+  delete(id: string): void {
+    const assets = this.getAll();
+    const filtered = assets.filter(a => a.id !== id);
+    saveToStorage(STORAGE_KEYS.FEATURED_ASSETS, filtered);
+  },
+};
+
+// Member Asset Verification operations
+export const MemberAssetVerificationService = {
+  getAll(): MemberAssetVerification[] {
+    return getFromStorage<MemberAssetVerification[]>(STORAGE_KEYS.MEMBER_ASSET_VERIFICATIONS, []);
+  },
+
+  getByMember(memberId: string): MemberAssetVerification[] {
+    return this.getAll().filter(v => v.member_id === memberId);
+  },
+
+  getByMemberAndAsset(memberId: string, assetId: string): MemberAssetVerification | null {
+    const verifications = this.getAll();
+    return verifications.find(v => v.member_id === memberId && v.asset_id === assetId) || null;
+  },
+
+  canVerify(memberId: string, assetId: string): boolean {
+    const verification = this.getByMemberAndAsset(memberId, assetId);
+    if (!verification) return true;
+    
+    const now = new Date();
+    const cooldownUntil = new Date(verification.cooldown_until);
+    return now >= cooldownUntil;
+  },
+
+  create(memberId: string, assetId: string, verified: boolean): MemberAssetVerification {
+    const verifications = this.getAll();
+    const now = new Date();
+    const cooldownUntil = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour cooldown
+
+    const newVerification: MemberAssetVerification = {
+      id: generateId(),
+      member_id: memberId,
+      asset_id: assetId,
+      verified,
+      last_checked: now.toISOString(),
+      cooldown_until: cooldownUntil.toISOString(),
+    };
+
+    verifications.push(newVerification);
+    saveToStorage(STORAGE_KEYS.MEMBER_ASSET_VERIFICATIONS, verifications);
+    return newVerification;
+  },
+
+  update(memberId: string, assetId: string, verified: boolean): MemberAssetVerification | null {
+    const verifications = this.getAll();
+    const index = verifications.findIndex(v => v.member_id === memberId && v.asset_id === assetId);
+    
+    if (index === -1) {
+      // Create new verification if doesn't exist
+      return this.create(memberId, assetId, verified);
+    }
+
+    const now = new Date();
+    const cooldownUntil = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour cooldown
+
+    verifications[index] = {
+      ...verifications[index],
+      verified,
+      last_checked: now.toISOString(),
+      cooldown_until: cooldownUntil.toISOString(),
+    };
+    
+    saveToStorage(STORAGE_KEYS.MEMBER_ASSET_VERIFICATIONS, verifications);
+    return verifications[index];
+  },
+
+  hasActiveVerification(memberId: string): boolean {
+    const verifications = this.getByMember(memberId);
+    return verifications.some(v => v.verified);
+  },
+};
+
+// Weekly Reward operations
+export const WeeklyRewardService = {
+  getAll(): WeeklyReward[] {
+    return getFromStorage<WeeklyReward[]>(STORAGE_KEYS.WEEKLY_REWARDS, []);
+  },
+
+  getActive(): WeeklyReward | null {
+    const rewards = this.getAll().filter(r => r.is_active);
+    return rewards.length > 0 ? rewards[0] : null;
+  },
+
+  getById(id: string): WeeklyReward | null {
+    const rewards = this.getAll();
+    return rewards.find(r => r.id === id) || null;
+  },
+
+  create(weekStart: string, weekEnd: string, itemName: string, itemQuantity: number): WeeklyReward {
+    const rewards = this.getAll();
+
+    // Deactivate all previous weekly rewards
+    rewards.forEach(r => r.is_active = false);
+
+    const newReward: WeeklyReward = {
+      id: generateId(),
+      week_start: weekStart,
+      week_end: weekEnd,
+      item_name: itemName,
+      item_quantity: itemQuantity,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    };
+
+    rewards.push(newReward);
+    saveToStorage(STORAGE_KEYS.WEEKLY_REWARDS, rewards);
+    return newReward;
+  },
+
+  update(id: string, updates: Partial<WeeklyReward>): WeeklyReward | null {
+    const rewards = this.getAll();
+    const index = rewards.findIndex(r => r.id === id);
+    
+    if (index === -1) return null;
+
+    rewards[index] = { ...rewards[index], ...updates };
+    saveToStorage(STORAGE_KEYS.WEEKLY_REWARDS, rewards);
+    return rewards[index];
+  },
+
+  deactivateAll(): void {
+    const rewards = this.getAll();
+    rewards.forEach(r => r.is_active = false);
+    saveToStorage(STORAGE_KEYS.WEEKLY_REWARDS, rewards);
+  },
+};
+
+// Weekly Winner operations
+export const WeeklyWinnerService = {
+  getAll(): WeeklyWinner[] {
+    return getFromStorage<WeeklyWinner[]>(STORAGE_KEYS.WEEKLY_WINNERS, []);
+  },
+
+  getByWeeklyReward(weeklyRewardId: string): WeeklyWinner[] {
+    return this.getAll().filter(w => w.weekly_reward_id === weeklyRewardId);
+  },
+
+  create(weeklyRewardId: string, memberId: string, roninAddress: string, itemNumber: number): WeeklyWinner {
+    const winners = this.getAll();
+
+    const newWinner: WeeklyWinner = {
+      id: generateId(),
+      weekly_reward_id: weeklyRewardId,
+      member_id: memberId,
+      ronin_address: roninAddress,
+      item_number: itemNumber,
+      created_at: new Date().toISOString(),
+    };
+
+    winners.push(newWinner);
+    saveToStorage(STORAGE_KEYS.WEEKLY_WINNERS, winners);
+    return newWinner;
+  },
+
+  generateWinnersList(weeklyRewardId: string): WeeklyWinner[] {
+    const weekly_reward = WeeklyRewardService.getById(weeklyRewardId);
+    if (!weekly_reward) return [];
+
+    // Get all members sorted by points
+    const members = MemberService.getAll()
+      .filter(m => m.is_active)
+      .sort((a, b) => b.points - a.points);
+
+    // Create winners for top members up to item_quantity
+    const winners: WeeklyWinner[] = [];
+    const count = Math.min(members.length, weekly_reward.item_quantity);
+
+    for (let i = 0; i < count; i++) {
+      const member = members[i];
+      const winner = this.create(
+        weeklyRewardId,
+        member.id,
+        member.wallet_address,
+        i + 1
+      );
+      winners.push(winner);
+    }
+
+    return winners;
+  },
+
+  clearByWeeklyReward(weeklyRewardId: string): void {
+    const winners = this.getAll();
+    const filtered = winners.filter(w => w.weekly_reward_id !== weeklyRewardId);
+    saveToStorage(STORAGE_KEYS.WEEKLY_WINNERS, filtered);
   },
 };
