@@ -235,6 +235,30 @@ describe('XPostAPI.verifyAction - Error Handling', () => {
     expect(result.verified).toBe(true);
   });
 
+  test('should handle JSON parsing errors even when isUserVerificationFailure is set', async () => {
+    // Mock fetch to return non-ok response with invalid JSON
+    // This simulates the edge case where response.ok is false (sets isUserVerificationFailure to true)
+    // but then response.json() throws a SyntaxError
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 400,
+      headers: {
+        get: (name: string) => {
+          if (name === 'content-type') return 'application/json';
+          return null;
+        },
+      },
+      json: jest.fn().mockRejectedValue(new SyntaxError('Unexpected token < in JSON at position 0')),
+    });
+
+    // Should allow action because it's a JSON parsing error (technical), not a user verification failure
+    const result = await XPostAPI.verifyAction('post-1', 'like');
+
+    expect(result.success).toBe(true);
+    expect(result.verified).toBe(true);
+    expect(localStorage.XPostActionService.create).toHaveBeenCalled();
+  });
+
   test('should throw error when X handle is not set', async () => {
     // Mock member without X handle
     (localStorage.MemberService.getById as jest.Mock).mockReturnValue({

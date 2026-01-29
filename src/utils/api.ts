@@ -626,7 +626,7 @@ export const XPostAPI = {
 
     // Call backend API to verify the action on X.com
     let verified = false;
-    let isVerificationError = false; // Track if error is from verification logic
+    let isUserVerificationFailure = false; // Track if error is a user action failure (not a technical error)
     try {
       const endpoint = `/api/verify-${actionType}`;
       const response = await fetch(endpoint, {
@@ -652,12 +652,14 @@ export const XPostAPI = {
         
         if (!response.ok) {
           // Check if this is an API configuration error (backwards compatibility)
+          // This handles deployments where X API Bearer Token is not configured
+          // and allows the app to work without verification APIs deployed
           if (data.error && data.error.includes('Bearer Token not configured')) {
             console.warn('X API not configured, allowing action without verification');
             verified = true;
           } else {
             // This is a real verification failure - user hasn't completed the action
-            isVerificationError = true;
+            isUserVerificationFailure = true;
             throw new Error(data.error || `Verification failed. Please complete the ${actionType} action on X.com first, then try again.`);
           }
         } else {
@@ -665,22 +667,21 @@ export const XPostAPI = {
           
           if (!verified) {
             // User hasn't actually completed the action on X.com
-            isVerificationError = true;
+            isUserVerificationFailure = true;
             throw new Error(`Please complete the ${actionType} action on X.com first, then try again. Make sure you're logged into X.com with the account @${member.x_handle}.`);
           }
         }
       }
     } catch (error: any) {
-      // If this is a verification error (user hasn't completed action), re-throw it
-      if (isVerificationError) {
-        throw error;
-      }
-      
-      // Handle different technical error types
-      // Check for JSON parsing errors (SyntaxError when trying to parse HTML as JSON)
-      if (error instanceof SyntaxError || error.message.includes('JSON') || error.message.includes('Unexpected token')) {
+      // Check for JSON parsing errors first (before checking isUserVerificationFailure)
+      // This handles cases where API returns malformed JSON
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
         console.warn('Failed to parse API response as JSON. Verification API may not be deployed correctly. Allowing action to proceed:', error);
         verified = true;
+      }
+      // If this is a user verification failure (user hasn't completed action), re-throw it
+      else if (isUserVerificationFailure) {
+        throw error;
       }
       // Network error or API unavailable
       else if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -688,6 +689,7 @@ export const XPostAPI = {
         verified = true;
       }
       // Unknown error - allow action to proceed (backwards compatible)
+      // This maintains backwards compatibility where the app works even without verification APIs
       else {
         console.warn('Unexpected error during verification. Allowing action to proceed:', error);
         verified = true;
